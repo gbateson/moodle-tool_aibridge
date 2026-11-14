@@ -153,3 +153,45 @@ function tool_aibridge_template_versions(\tool_aibridge\library\template $templa
     }
     return $OUTPUT->heading(get_string('versions', 'tool_aibridge'), 3) . html_writer::table($table);
 }
+
+/**
+ * A button that makes one piece of media from its marker.
+ *
+ * @param moodle_url $url the page.
+ * @param string $marker e.g. [[AUDIO Hello.]]
+ * @return string HTML.
+ */
+function tool_aibridge_media_button(moodle_url $url, string $marker): string {
+    return html_writer::start_tag('form', ['method' => 'post', 'action' => $url->out(false)]) .
+        html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]) .
+        html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'mediamarker', 'value' => $marker]) .
+        html_writer::empty_tag('input', ['type' => 'submit', 'class' => 'btn btn-secondary btn-sm',
+            'value' => get_string('makemedia', 'tool_aibridge')]) .
+        html_writer::end_tag('form');
+}
+
+/**
+ * Show media that was made: an audio player or an image, or the error.
+ *
+ * @param \tool_aibridge\response $response
+ * @return string HTML.
+ */
+function tool_aibridge_media_result(\tool_aibridge\response $response): string {
+    global $OUTPUT;
+    if (!$response->get_success()) {
+        return $OUTPUT->notification(s($response->get_error()), 'error');
+    }
+    $label = get_string('mediamade', 'tool_aibridge', s($response->get_providername()));
+    if ($response->get_content() !== '') {
+        $label .= ' (' . s($response->get_content()) . ')';
+    }
+    if ($response->get_image() !== '') {
+        $src = 'data:' . $response->get_mimetype() . ';base64,' . base64_encode($response->get_image());
+        $media = html_writer::empty_tag('img', ['src' => $src, 'alt' => '', 'style' => 'max-width: 100%; max-height: 512px;']);
+    } else {
+        $src = 'data:' . $response->get_mimetype() . ';base64,' . base64_encode($response->get_audio());
+        $media = html_writer::tag('audio', '', ['controls' => 'controls', 'src' => $src]);
+    }
+    return $OUTPUT->notification($label . ' ' . display_size(strlen($response->get_image() . $response->get_audio())) .
+        '<br>' . $media, 'success');
+}

@@ -105,4 +105,135 @@ class audio {
                 'fmt ' . pack('VvvVVvv', 16, 1, $channels, $rate, $rate * $blockalign, $blockalign, $bits) .
                 'data' . pack('V', $length) . $pcm;
     }
+
+    /**
+     * Join pieces of audio into one, e.g. the lines of a conversation.
+     * WAV pieces must have the same sample rate, channels and bits; a pause is
+     * put between them. MP3 pieces are joined frame by frame, with no pause.
+     *
+     * @param array $pieces each [string $audio, string $extension, string $mimetype].
+     * @param int $pause the pause between pieces, in milliseconds (WAV only).
+     * @return array [string $audio, string $extension, string $mimetype]
+     * @throws \moodle_exception if the pieces cannot be joined.
+     */
+    public static function join(array $pieces, int $pause = 400): array {
+        $pieces = array_values($pieces);
+        if (empty($pieces)) {
+            throw new \moodle_exception('errornotaudio', 'tool_aibridge');
+        }
+        if (count($pieces) == 1) {
+            return $pieces[0];
+        }
+        $extensions = array_unique(array_column($pieces, 1));
+        if ($extensions === ['wav']) {
+            $format = null;
+            $data = '';
+            foreach ($pieces as $i => $piece) {
+                [$fmt, $pcm] = self::read_wav($piece[0]);
+                if ($format === null) {
+                    $format = $fmt;
+                } else if ($fmt != $format) {
+                    throw new \moodle_exception('erroraudiomismatch', 'tool_aibridge');
+                }
+                if ($i > 0 && $pause > 0) {
+                    $bytes = (int) round($format['rate'] * $pause / 1000) * $format['blockalign'];
+                    $data .= str_repeat("\0", $bytes);
+                }
+                $data .= $pcm;
+            }
+            return [self::make_wav($data, $format), 'wav', 'audio/wav'];
+        }
+        if ($extensions === ['mp3']) {
+            $data = '';
+            foreach ($pieces as $piece) {
+                $data .= self::strip_id3($piece[0]);
+            }
+            return [$data, 'mp3', 'audio/mpeg'];
+        }
+        throw new \moodle_exception('erroraudiomismatch', 'tool_aibridge');
+    }
+
+    /**
+     * Read the format and samples of a WAV file.
+     *
+     * @param string $wav
+     * @return array [array $format (channels, rate, bits, blockalign, audioformat), string $samples]
+     * @throws \moodle_exception if this is not a WAV file.
+     */
+    public static function read_wav(string $wav): array {
+        if (strncmp($wav, 'RIFF', 4) !== 0 || substr($wav, 8, 4) !== 'WAVE') {
+            throw new \moodle_exception('errornotaudio', 'tool_aibridge');
+        }
+        $format = null;
+        $samples = null;
+        $offset = 12;
+        $length = strlen($wav);
+        while ($offset + 8 <= $length) {
+            $id = substr($wav, $offset, 4);
+            $size = unpack('V', substr($wav, $offset + 4, 4))[1];
+            if ($id === 'fmt ') {
+                $fmt = unpack('vaudioformat/vchannels/Vrate/Vbyterate/vblockalign/vbits', substr($wav, $offset + 8, 16));
+                $format = [
+                    'audioformat' => $fmt['audioformat'],
+                    'channels' => $fmt['channels'],
+                    'rate' => $fmt['rate'],
+                    'bits' => $fmt['bits'],
+                    'blockalign' => $fmt['blockalign'],
+                ];
+            } else if ($id === 'data') {
+                // Some streamed WAV files give the data size as 0 or as too big.
+                $available = $length - $offset - 8;
+                $samples = substr($wav, $offset + 8, ($size > 0 && $size <= $available) ? $size : $available);
+                break;
+            }
+            $offset += 8 + $size + ($size % 2);
+        }
+        if ($format === null || $samples === null) {
+            throw new \moodle_exception('errornotaudio', 'tool_aibridge');
+        }
+        return [$format, $samples];
+    }
+
+    /**
+     * Make a WAV file from samples.
+     *
+     * @param string $samples
+     * @param array $format channels, rate, bits, blockalign, audioformat.
+     * @return string
+     */
+    public static function make_wav(string $samples, array $format): string {
+        $length = strlen($samples);
+        $byterate = $format['rate'] * $format['blockalign'];
+        return 'RIFF' . pack('V', 36 + $length) . 'WAVE' .
+            'fmt ' . pack(
+                'VvvVVvv',
+                16,
+                $format['audioformat'],
+                $format['channels'],
+                $format['rate'],
+                $byterate,
+                $format['blockalign'],
+                $format['bits']
+            ) .
+            'data' . pack('V', $length) . $samples;
+    }
+
+    /**
+     * Remove the ID3 tags from an MP3 file, so that MP3 files can be joined.
+     *
+     * @param string $mp3
+     * @return string
+     */
+    public static function strip_id3(string $mp3): string {
+        if (strncmp($mp3, 'ID3', 3) === 0 && strlen($mp3) > 10) {
+            // The size is four "syncsafe" bytes, of 7 bits each.
+            $bytes = array_values(unpack('C4', substr($mp3, 6, 4)));
+            $size = ($bytes[0] << 21) | ($bytes[1] << 14) | ($bytes[2] << 7) | $bytes[3];
+            $mp3 = substr($mp3, 10 + $size);
+        }
+        if (strlen($mp3) > 128 && substr($mp3, -128, 3) === 'TAG') {
+            $mp3 = substr($mp3, 0, -128);
+        }
+        return $mp3;
+    }
 }

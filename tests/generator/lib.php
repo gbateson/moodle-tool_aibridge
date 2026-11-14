@@ -57,6 +57,9 @@ class tool_aibridge_generator extends component_generator_base {
             if ($capability == \tool_aibridge\provider::CAPABILITY_MULTIMODAL) {
                 $preset = 'openaifiles';
             }
+            if ($capability == \tool_aibridge\provider::CAPABILITY_IMAGE) {
+                $preset = 'openaiimage';
+            }
         }
         $apikey = isset($record['apikey']) ? $record['apikey'] : 'test-key-' . $this->count;
         unset($record['preset'], $record['apikey']);

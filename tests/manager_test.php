@@ -16,6 +16,7 @@
 
 namespace tool_aibridge;
 
+use tool_aibridge\action\generate_image;
 use tool_aibridge\action\generate_speech;
 use tool_aibridge\action\generate_text;
 
@@ -30,6 +31,8 @@ use tool_aibridge\action\generate_text;
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\manager::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\action\generate_text::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\action\generate_speech::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\action\generate_image::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\image::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\policy::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\rate_limiter::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\logger::class)]
@@ -191,6 +194,61 @@ final class manager_test extends \advanced_testcase {
         $response = manager::process(new generate_speech($this->context->id, $this->user->id, 'Hello'));
         $this->assertTrue($response->get_success(), $response->get_error());
         $this->assertSame('wav', $response->get_extension());
+    }
+
+    /**
+     * Images are generated, in the right size, and can be saved as files.
+     */
+    public function test_generate_image(): void {
+        $png = "\x89PNG\r\n\x1a\n" . str_repeat("\0", 20);
+        $provider = $this->get_generator()->create_provider(['capability' => 'image']);
+        $action = new generate_image($this->context->id, $this->user->id, 'A swan by a pond.', 'landscape', 'hd');
+        $tokens = $action->get_tokens($provider);
+        $this->assertSame('1536x1024', $tokens['SIZE']);
+        $this->assertSame('16:9', $tokens['RATIO']);
+        $this->assertSame('high', $tokens['QUALITY']);
+
+        \curl::mock_response(json_encode(['data' => [['b64_json' => base64_encode($png)]]]));
+        $response = manager::process($action);
+        $this->assertTrue($response->get_success(), $response->get_error());
+        $this->assertSame('image/png', $response->get_mimetype());
+        $this->assertSame($png, $response->get_image());
+        $file = $response->save_image(['contextid' => $this->context->id, 'component' => 'mod_test',
+            'filearea' => 'image', 'itemid' => 0, 'filename' => 'swan']);
+        $this->assertSame('swan.png', $file->get_filename());
+
+        // A text provider cannot make images.
+        $this->assertSame(['image'], $action->get_capabilities());
+    }
+
+    /**
+     * DALL-E 3 sizes and its rewritten prompt; Imagen ratios; and images given as URLs.
+     */
+    public function test_generate_image_presets(): void {
+        $jpeg = "\xFF\xD8\xFF\xE0" . str_repeat("\0", 20);
+        $dalle = $this->get_generator()->create_provider(['preset' => 'dalle3', 'capability' => 'image']);
+        $action = new generate_image($this->context->id, $this->user->id, 'A swan.', 'portrait');
+        $this->assertSame('1024x1792', $action->get_tokens($dalle)['SIZE']);
+        $this->assertSame('natural', $dalle->get_token_defaults()['STYLE']);
+        \curl::mock_response(json_encode(['data' => [['b64_json' => base64_encode($jpeg), 'revised_prompt' => 'A white swan.']]]));
+        $response = manager::process($action, $dalle->get_id());
+        $this->assertTrue($response->get_success(), $response->get_error());
+        $this->assertSame('jpg', $response->get_extension());
+        $this->assertSame('A white swan.', $response->get_content());
+
+        $imagen = $this->get_generator()->create_provider(['preset' => 'imagen', 'capability' => 'image']);
+        $this->assertSame('9:16', $action->get_tokens($imagen)['RATIO']);
+
+        // A reply with a URL: the image is downloaded. Mocked replies are used last first.
+        \curl::mock_response($jpeg);
+        \curl::mock_response(json_encode(['data' => [['b64_json' => 'https://images.example.com/swan.jpg']]]));
+        $response = manager::process($action, $dalle->get_id());
+        $this->assertTrue($response->get_success(), $response->get_error());
+        $this->assertSame($jpeg, $response->get_image());
+
+        // A reply that is not an image.
+        \curl::mock_response(json_encode(['data' => [['b64_json' => base64_encode('<html>Error</html>')]]]));
+        $this->assertSame('notimage', manager::process($action, $dalle->get_id())->get_errorcode());
     }
 
     /**

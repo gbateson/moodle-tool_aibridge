@@ -38,6 +38,9 @@ class provider {
     /** The provider generates speech from text. */
     const CAPABILITY_SPEECH = 'speech';
 
+    /** The provider generates images from text. */
+    const CAPABILITY_IMAGE = 'image';
+
     /** Files are not sent. */
     const UPLOAD_NONE = 'none';
 
@@ -78,7 +81,8 @@ class provider {
      */
     public static function get_capability_options(): array {
         $options = [];
-        foreach ([self::CAPABILITY_TEXT, self::CAPABILITY_MULTIMODAL, self::CAPABILITY_SPEECH] as $capability) {
+        $capabilities = [self::CAPABILITY_TEXT, self::CAPABILITY_MULTIMODAL, self::CAPABILITY_SPEECH, self::CAPABILITY_IMAGE];
+        foreach ($capabilities as $capability) {
             $options[$capability] = get_string('capability_' . $capability, 'tool_aibridge');
         }
         return $options;

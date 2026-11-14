@@ -166,7 +166,9 @@ class manager {
      * @return response
      */
     public static function test(provider $provider, \context $context, int $userid): response {
-        if ($provider->get_capability() === provider::CAPABILITY_SPEECH) {
+        if ($provider->get_capability() === provider::CAPABILITY_IMAGE) {
+            $action = new action\generate_image($context->id, $userid, get_string('testimage', 'tool_aibridge'));
+        } else if ($provider->get_capability() === provider::CAPABILITY_SPEECH) {
             $action = new action\generate_speech($context->id, $userid, get_string('testspeech', 'tool_aibridge'));
         } else {
             $action = new action\generate_text($context->id, $userid, get_string('testprompt', 'tool_aibridge'));

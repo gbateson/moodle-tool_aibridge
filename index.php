@@ -92,6 +92,11 @@ if ($testresponse) {
     if (!$testresponse->get_success()) {
         echo $OUTPUT->notification(get_string('testfailed', 'tool_aibridge', $name) . '<br>' .
                 s($testresponse->get_error()), 'error');
+    } else if ($testresponse->get_image() !== '') {
+        $src = 'data:' . $testresponse->get_mimetype() . ';base64,' . base64_encode($testresponse->get_image());
+        echo $OUTPUT->notification(get_string('testsucceeded', 'tool_aibridge', $name) . '<br>' .
+            html_writer::empty_tag('img', ['src' => $src, 'alt' => get_string('testimage', 'tool_aibridge'),
+                'style' => 'max-width: 256px; max-height: 256px;']), 'success');
     } else if ($testresponse->get_audio() !== '') {
         $src = 'data:' . $testresponse->get_mimetype() . ';base64,' . base64_encode($testresponse->get_audio());
         echo $OUTPUT->notification(get_string('testsucceeded', 'tool_aibridge', $name) . '<br>' .

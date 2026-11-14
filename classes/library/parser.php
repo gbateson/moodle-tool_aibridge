@@ -92,7 +92,7 @@ class parser {
     public static function clean(string $reply, string $qformat): string {
         $text = str_replace(["\r\n", "\r"], "\n", $reply);
         // Markdown code fences: three backticks, optionally with a language, e.g. gift.
-        if (preg_match('/^`{3}[a-zA-Z]*[ \t]*\n(.*?)\n`{3}[ \t]*$/ms', $text, $match)) {
+        if (preg_match('/^\\x60{3}[a-zA-Z]*[ \t]*\n(.*?)\n\\x60{3}[ \t]*$/ms', $text, $match)) {
             $text = $match[1];
         }
         $text = trim($text);

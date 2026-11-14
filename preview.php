@@ -52,6 +52,17 @@ if (!$prompt->can_use($context, $USER->id) && !$prompt->can_edit($USER->id)) {
     throw new required_capability_exception($context, 'tool/aibridge:usetemplate', 'nopermissions', '');
 }
 
+// Make one piece of media from a marker, e.g. [[AUDIO ...]] or [[IMAGE ...]].
+$mediaresponse = null;
+$marker = optional_param('mediamarker', '', PARAM_RAW);
+if ($marker !== '' && confirm_sesskey()) {
+    $items = \tool_aibridge\library\parser::find_media($marker);
+    if (empty($items)) {
+        $items = [['type' => 'AUDIO', 'text' => $marker, 'attributes' => '', 'marker' => $marker]];
+    }
+    $mediaresponse = \tool_aibridge\media::generate($items[0], $context->id, $USER->id, ['component' => 'tool_aibridge']);
+}
+
 // The question types linked to formats, in this prompt and its parents.
 $links = [];
 $chain = [];
@@ -149,14 +160,30 @@ if ($response) {
         echo html_writer::tag('pre', s($parsed->get_text()), ['class' => 'tool-aibridge-text border p-2']);
         if ($media = $parsed->get_media()) {
             $table = new html_table();
-            $table->head = [get_string('mediatype', 'tool_aibridge'), get_string('mediatext', 'tool_aibridge')];
+            $table->head = [get_string('mediatype', 'tool_aibridge'), get_string('mediatext', 'tool_aibridge'), ''];
             $table->attributes['class'] = 'generaltable';
             foreach ($media as $item) {
-                $table->data[] = [$item['type'], s($item['text'])];
+                $table->data[] = [$item['type'], html_writer::tag('pre', s($item['text']), ['class' => 'tool-aibridge-text']),
+                    tool_aibridge_media_button($PAGE->url, $item['marker'])];
             }
             echo $OUTPUT->heading(get_string('media', 'tool_aibridge'), 4);
             echo html_writer::table($table);
         }
     }
 }
+
+// Try a media marker, or a conversation.
+echo $OUTPUT->heading(get_string('trymedia', 'tool_aibridge'), 3);
+if ($mediaresponse) {
+    echo tool_aibridge_media_result($mediaresponse);
+}
+echo html_writer::start_tag('form', ['method' => 'post', 'action' => $PAGE->url->out(false)]);
+echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+echo html_writer::tag('textarea', s($marker), ['name' => 'mediamarker', 'rows' => 8, 'cols' => 80,
+    'class' => 'form-control', 'style' => 'font-family: monospace', 'aria-label' => get_string('trymedia', 'tool_aibridge'),
+    'placeholder' => "[[AUDIO\nA=woman (customer)\nB=man (shop assistant)\nA: Hello.\nB: Good morning.\n]]"]);
+echo html_writer::tag('p', html_writer::tag('small', get_string('trymedia_help', 'tool_aibridge'), ['class' => 'text-muted']));
+echo html_writer::empty_tag('input', ['type' => 'submit', 'class' => 'btn btn-secondary',
+    'value' => get_string('makemedia', 'tool_aibridge')]);
+echo html_writer::end_tag('form');
 echo $OUTPUT->footer();

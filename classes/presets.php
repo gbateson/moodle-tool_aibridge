@@ -157,6 +157,63 @@ class presets {
                 'uploadstyle' => provider::UPLOAD_INLINE_BASE64,
             ],
 
+            // Images.
+            'openaiimage' => [
+                'name' => 'OpenAI images',
+                'capability' => provider::CAPABILITY_IMAGE,
+                'url' => 'https://api.openai.com/v1/images/generations',
+                'headers' => $openaiheaders,
+                'model' => 'gpt-image-1',
+                'returnpath' => 'data,0,b64_json',
+                'tokendefaults' => self::json([
+                    'SIZE_SQUARE' => '1024x1024', 'SIZE_LANDSCAPE' => '1536x1024', 'SIZE_PORTRAIT' => '1024x1536',
+                    'QUALITY_STANDARD' => 'medium', 'QUALITY_HD' => 'high',
+                ]),
+                'requesttemplate' => self::json([
+                    'model' => '{{MODEL}}',
+                    'prompt' => '{{PROMPT}}',
+                    'size' => '{{SIZE}}',
+                    'quality' => '{{QUALITY}}',
+                    'n' => 1,
+                ]),
+            ],
+            'dalle3' => [
+                'name' => 'DALL-E 3',
+                'capability' => provider::CAPABILITY_IMAGE,
+                'url' => 'https://api.openai.com/v1/images/generations',
+                'headers' => $openaiheaders,
+                'model' => 'dall-e-3',
+                'returnpath' => 'data,0,b64_json',
+                'tokendefaults' => self::json([
+                    'SIZE_SQUARE' => '1024x1024', 'SIZE_LANDSCAPE' => '1792x1024', 'SIZE_PORTRAIT' => '1024x1792',
+                    'STYLE' => 'natural',
+                ]),
+                'requesttemplate' => self::json([
+                    'model' => '{{MODEL}}',
+                    'prompt' => '{{PROMPT}}',
+                    'size' => '{{SIZE}}',
+                    'quality' => '{{QUALITY}}',
+                    'style' => '{{STYLE}}',
+                    'response_format' => 'b64_json',
+                    'n' => 1,
+                ]),
+            ],
+            'imagen' => [
+                'name' => 'Imagen',
+                'capability' => provider::CAPABILITY_IMAGE,
+                'url' => 'https://generativelanguage.googleapis.com/v1beta/models/{{MODEL}}:predict',
+                'headers' => $geminiheaders,
+                'model' => 'imagen-4.0-generate-001',
+                'returnpath' => 'predictions,0,bytesBase64Encoded',
+                'tokendefaults' => self::json([
+                    'RATIO_SQUARE' => '1:1', 'RATIO_LANDSCAPE' => '16:9', 'RATIO_PORTRAIT' => '9:16',
+                ]),
+                'requesttemplate' => self::json([
+                    'instances' => [['prompt' => '{{PROMPT}}']],
+                    'parameters' => ['sampleCount' => 1, 'aspectRatio' => '{{RATIO}}'],
+                ]),
+            ],
+
             // Speech.
             'openaitts' => [
                 'name' => 'OpenAI speech',
@@ -165,13 +222,19 @@ class presets {
                 'headers' => $openaiheaders,
                 'model' => 'gpt-4o-mini-tts',
                 'returnpath' => '',
-                'tokendefaults' => self::json(['VOICE' => 'alloy', 'STYLE' => 'Speak clearly, at a natural pace.']),
+                'tokendefaults' => self::json([
+                    'VOICE' => 'alloy',
+                    'STYLE' => 'Speak clearly, at a natural pace.',
+                    'AUDIOFORMAT' => 'mp3',
+                    'VOICES_FEMALE' => 'nova,shimmer,coral,sage',
+                    'VOICES_MALE' => 'onyx,echo,ash,fable',
+                ]),
                 'requesttemplate' => self::json([
                     'model' => '{{MODEL}}',
                     'input' => '{{TEXT}}',
                     'instructions' => '{{STYLE}}',
                     'voice' => '{{VOICE}}',
-                    'response_format' => 'mp3',
+                    'response_format' => '{{AUDIOFORMAT}}',
                 ]),
             ],
             'geminitts' => [
@@ -181,7 +244,12 @@ class presets {
                 'headers' => $geminiheaders,
                 'model' => 'gemini-2.5-flash-preview-tts',
                 'returnpath' => 'candidates,0,content,parts,0,inlineData,data',
-                'tokendefaults' => self::json(['VOICE' => 'Kore', 'STYLE' => 'Say this clearly']),
+                'tokendefaults' => self::json([
+                    'VOICE' => 'Kore',
+                    'STYLE' => 'Say this clearly',
+                    'VOICES_FEMALE' => 'Kore,Aoede,Leda,Zephyr',
+                    'VOICES_MALE' => 'Puck,Charon,Fenrir,Orus',
+                ]),
                 'requesttemplate' => self::json([
                     'contents' => [['parts' => [['text' => '{{STYLE}}: {{TEXT}}']]]],
                     'generationConfig' => [
@@ -197,7 +265,11 @@ class presets {
                 'headers' => '{"xi-api-key": "{{APIKEY}}", "Accept": "audio/mpeg"}',
                 'model' => 'eleven_multilingual_v2',
                 'returnpath' => '',
-                'tokendefaults' => self::json(['VOICE' => '21m00Tcm4TlvDq8ikWAM']),
+                'tokendefaults' => self::json([
+                    'VOICE' => '21m00Tcm4TlvDq8ikWAM',
+                    'VOICES_FEMALE' => '21m00Tcm4TlvDq8ikWAM,EXAVITQu4vr4xnSDxMaL',
+                    'VOICES_MALE' => 'pNInz6obpgDQGcFmaJgB,ErXwobaYiN019PkySvjV',
+                ]),
                 'requesttemplate' => self::json([
                     'text' => '{{TEXT}}',
                     'model_id' => '{{MODEL}}',

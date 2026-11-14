@@ -45,7 +45,10 @@ class response {
     /** @var string the generated audio. */
     protected $audio = '';
 
-    /** @var string the MIME type of the audio, e.g. "audio/mpeg". */
+    /** @var string the generated image. */
+    protected $image = '';
+
+    /** @var string the MIME type of the audio or image, e.g. "audio/mpeg". */
     protected $mimetype = '';
 
     /** @var string the file extension of the audio, e.g. "mp3". */
@@ -169,6 +172,21 @@ class response {
     }
 
     /**
+     * Set the generated image.
+     *
+     * @param string $image
+     * @param string $mimetype
+     * @param string $extension
+     * @return response
+     */
+    public function set_image(string $image, string $mimetype, string $extension): response {
+        $this->image = $image;
+        $this->mimetype = $mimetype;
+        $this->extension = $extension;
+        return $this;
+    }
+
+    /**
      * Set the token usage.
      *
      * @param int|null $prompttokens
@@ -249,7 +267,16 @@ class response {
     }
 
     /**
-     * Get the MIME type of the generated audio.
+     * Get the generated image.
+     *
+     * @return string
+     */
+    public function get_image(): string {
+        return $this->image;
+    }
+
+    /**
+     * Get the MIME type of the generated audio or image.
      *
      * @return string
      */
@@ -258,7 +285,7 @@ class response {
     }
 
     /**
-     * Get the file extension of the generated audio.
+     * Get the file extension of the generated audio or image.
      *
      * @return string
      */
@@ -346,12 +373,35 @@ class response {
      * @return \stored_file
      */
     public function save_audio($filerecord): \stored_file {
+        return $this->save_file($filerecord, $this->audio, 'speech');
+    }
+
+    /**
+     * Save the generated image as a file.
+     *
+     * @param array|\stdClass $filerecord contextid, component, filearea, itemid, filepath, and
+     *      optionally filename. The filename's extension is set to match the image.
+     * @return \stored_file
+     */
+    public function save_image($filerecord): \stored_file {
+        return $this->save_file($filerecord, $this->image, 'image');
+    }
+
+    /**
+     * Save content as a file.
+     *
+     * @param array|\stdClass $filerecord
+     * @param string $content
+     * @param string $defaultname the file name, if the file record has none.
+     * @return \stored_file
+     */
+    protected function save_file($filerecord, string $content, string $defaultname): \stored_file {
         $filerecord = (array) $filerecord;
-        $filename = isset($filerecord['filename']) ? $filerecord['filename'] : 'speech';
+        $filename = isset($filerecord['filename']) ? $filerecord['filename'] : $defaultname;
         $filerecord['filename'] = preg_replace('/\.[a-z0-9]+$/i', '', $filename) . '.' . $this->extension;
         if (!isset($filerecord['filepath'])) {
             $filerecord['filepath'] = '/';
         }
-        return get_file_storage()->create_file_from_string($filerecord, $this->audio);
+        return get_file_storage()->create_file_from_string($filerecord, $content);
     }
 }

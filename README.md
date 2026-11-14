@@ -16,12 +16,14 @@ video. They also need to run on sites without the AI subsystem.
 
 The bridge gives plugins:
 
-* **One API** for text and speech now, and for more kinds of request later.
+* **One API** for text, speech, images and conversations, and for more kinds
+  of request later.
 * **Moodle's AI first**, when it is set up, so that sites can use the
   providers and settings they already have.
 * **Any provider with a JSON API**, set up with a URL, headers and a request
   template. Presets fill these in for ChatGPT, Claude, Gemini, DeepSeek,
-  Ollama, OpenAI speech, Gemini speech and ElevenLabs.
+  Ollama, OpenAI speech, Gemini speech, ElevenLabs, OpenAI images, DALL-E 3
+  and Imagen.
 * **Teachers' own providers.** Teachers can add providers with their own
   API keys, and share them in their courses or categories, for as long as
   they choose.
@@ -114,6 +116,36 @@ if ($response->get_success()) {
 }
 ```
 
+Images, with the same options as Moodle's own AI subsystem:
+
+```php
+$action = new \tool_aibridge\action\generate_image($context->id, $USER->id,
+        'A photorealistic image of a swan by a pond.', 'landscape', 'standard');
+$response = \tool_aibridge\manager::process($action);
+if ($response->get_success()) {
+    $file = $response->save_image([...]);
+}
+```
+
+Conversations, with a different voice for each speaker:
+
+```php
+$script = "A=woman (customer calling with a complaint)
+B=man (staff on a customer help line)
+A: Hello. I'm calling about a coffee machine.
+B: Oh, I'm sorry to hear that.";
+$response = \tool_aibridge\dialogue::generate($context->id, $USER->id, $script, ['language' => 'en-US']);
+```
+
+Each line is spoken by the same speech provider, in a voice chosen by
+gender from the provider's `VOICES_FEMALE` and `VOICES_MALE` lists (or given
+in the `voices` option), and the pieces are joined, with a short pause
+between the lines if the provider sends WAV. Each line is logged.
+
+`\tool_aibridge\media::generate()` makes the media for a marker in a reply,
+such as `[[IMAGE ...]]`, `[[AUDIO ...]]`, or `[[AUDIO ...]]` with a
+conversation in it.
+
 Other useful methods:
 
 * `manager::is_available($action)`: can any route do this action here?
@@ -169,6 +201,9 @@ markdown are removed, GIFT is checked with Moodle's GIFT reader, the
 questions are counted, and media markers such as `[[AUDIO ...]]` and
 `[[IMAGE ...]]` are listed.
 
+The "Preview" page also has a "Make media" box: paste a marker, such as an
+`[[IMAGE ...]]` or a conversation, to hear or see what the providers make.
+
 In a plugin:
 
 ```php
@@ -222,18 +257,22 @@ that are filled in when the request is sent:
 | `{{FILE_PARTS}}` | Text and files: one part for each file, from the file template |
 | `{{FILE_BASE64}}`, `{{FILE_MIMETYPE}}`, `{{FILE_NAME}}` | The file template, or a request with one file |
 | `{{TEXT}}`, `{{VOICE}}`, `{{LANGUAGE}}` | Speech |
+| `{{SPEAKER}}`, `{{GENDER}}`, `{{ROLE}}`, `{{AUDIOFORMAT}}` | Speech, in conversations (`{{AUDIOFORMAT}}` is `wav`) |
+| `{{PROMPT}}`, `{{SIZE}}`, `{{RATIO}}`, `{{QUALITY}}`, `{{STYLE}}` | Images. Sizes and ratios come from `SIZE_SQUARE`, `RATIO_LANDSCAPE`, etc. in "Default values" |
 
 Values are JSON-escaped, so put quotes round string tokens (`"{{PROMPT}}"`)
 but not round numbers (`{{MAXTOKENS}}`). "Default values" give tokens a value,
 e.g. `{"VOICE": "alloy", "MAXTOKENS": "2000"}`.
 
 The "Return path" says where the reply is, e.g. `choices,0,message,content`.
-For speech, leave it empty if the provider sends back the audio itself, or
-give the path to base64 audio in a JSON reply.
+For speech and images, leave it empty if the provider sends back the audio
+or image itself, or give the path to base64 data, or to a URL of the image,
+in a JSON reply.
 
 ## Coming next
 
-* Images, transcription, and assessment of writing and speaking.
+* HotPot exercises as output formats.
+* Transcription, and assessment of writing and speaking.
 * Video.
 
 ## Licence

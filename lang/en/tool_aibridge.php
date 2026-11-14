@@ -63,7 +63,9 @@ $string['capability_help'] = 'What the provider does.
 
 * **Text**: makes text from a prompt.
 * **Text and files**: makes text from a prompt and files, such as images, audio or PDF files.
-* **Speech**: makes speech from text.';
+* **Speech**: makes speech from text.
+* **Image**: makes an image from a prompt.';
+$string['capability_image'] = 'Image';
 $string['capability_multimodal'] = 'Text and files';
 $string['capability_speech'] = 'Speech';
 $string['capability_text'] = 'Text';
@@ -85,10 +87,14 @@ $string['coreroutenever'] = 'Never use Moodle\'s AI';
 $string['datanotice'] = 'Data notice';
 $string['datanotice_help'] = 'What users are told about where their data goes when they use this provider. If this is empty, users are told the name of the provider and the host that data is sent to.';
 $string['defaultdatanotice'] = 'Requests to {$a->name} are sent to {$a->host}.';
+$string['defaultvoice'] = 'default voice';
 $string['editprovider'] = 'Edit an AI provider';
 $string['enabled'] = 'Enabled';
 $string['enabled_desc'] = 'If this is not set, the AI bridge sends no requests.';
+$string['erroraudiomismatch'] = 'The pieces of audio cannot be joined, because they are in different formats.';
 $string['errorcore'] = 'Moodle\'s AI subsystem could not do this request.';
+$string['errordialogueline'] = 'Line {$a->line} of the conversation could not be spoken: {$a->error}';
+$string['errordialoguetoolong'] = 'The conversation is too long. The most is {$a} lines.';
 $string['errordisabled'] = 'The AI bridge is turned off.';
 $string['errorextendsloop'] = 'The prompt "{$a}" extends itself, or extends too many levels of prompts.';
 $string['errorfiletemplatejson'] = 'The file template is not valid JSON.';
@@ -96,13 +102,16 @@ $string['errorfiletemplatemissing'] = 'The request template of "{$a}" has {{FILE
 $string['errorfiletype'] = 'The provider does not take files of type {$a}.';
 $string['errorformatlinks'] = 'Each line must be "question type = format short name".';
 $string['errorgiftbraces'] = 'The reply has a { without a }, or a } without a {.';
+$string['errorimagedownload'] = 'The image could not be downloaded from the provider.';
 $string['errorimport'] = 'This is not an export of AI prompt library templates.';
 $string['errorincludeloop'] = '"{$a}" includes itself, or includes too many levels of templates.';
 $string['errorjsonobject'] = 'This must be a JSON object, e.g. {"name": "value"}.';
 $string['errorjsontemplate'] = 'This is not valid JSON, even after the {{TOKENS}} are filled in.';
+$string['errormediatype'] = 'Media of type "{$a}" cannot be made yet.';
 $string['errornegative'] = 'This cannot be less than 0.';
 $string['errornocloze'] = 'The reply has no embedded answers, e.g. {1:MCVS:=right~wrong}.';
 $string['errornocore'] = 'Moodle\'s AI subsystem cannot do this request.';
+$string['errornodialogue'] = 'The conversation has no lines, e.g. "A: Hello."';
 $string['errornoformat'] = 'No output format is linked to the question type "{$a}".';
 $string['errornoprompt'] = 'There is no prompt.';
 $string['errornoproviders'] = 'No AI provider can do this request here.';
@@ -111,6 +120,7 @@ $string['errornotaformat'] = '"{$a}" is not an output format.';
 $string['errornotaprompt'] = '"{$a}" is not a prompt.';
 $string['errornotaudio'] = 'The provider did not send back audio.';
 $string['errornotext'] = 'There is no text to speak.';
+$string['errornotimage'] = 'The provider did not send back an image.';
 $string['errornotmultimodal'] = 'The provider "{$a}" cannot take files.';
 $string['errorparameterrequired'] = 'The parameter "{$a}" needs a value.';
 $string['errorparameters'] = 'This must be JSON: a list of parameters, or an object of names and defaults.';
@@ -174,7 +184,9 @@ $string['logresponses'] = 'Keep replies';
 $string['logresponses_desc'] = 'If this is set, the text of each reply is kept in the log.';
 $string['logretention'] = 'Keep log records for';
 $string['logretention_desc'] = 'After this time, log records are deleted.';
+$string['makemedia'] = 'Make';
 $string['media'] = 'Media to make';
+$string['mediamade'] = 'Made by {$a}';
 $string['mediatext'] = 'Text';
 $string['mediatype'] = 'Type';
 $string['model'] = 'Model';
@@ -266,7 +278,8 @@ $string['requesttemplate_help'] = 'The JSON body of each request, with {{TOKENS}
 * All requests: {{MODEL}}, {{APIKEY}}, and the tokens in "Default values".
 * Text: {{PROMPT}} and {{SYSTEM}}. If there is no {{SYSTEM}}, the system instructions come before the prompt.
 * Text and files: {{FILE_PARTS}}, or for one file {{FILE_BASE64}}, {{FILE_MIMETYPE}} and {{FILE_NAME}}.
-* Speech: {{TEXT}}, {{VOICE}} and {{LANGUAGE}}.';
+* Speech: {{TEXT}}, {{VOICE}} and {{LANGUAGE}}; in conversations also {{SPEAKER}}, {{GENDER}} and {{ROLE}}, and {{AUDIOFORMAT}} is "wav".
+* Images: {{PROMPT}}, {{SIZE}}, {{RATIO}}, {{QUALITY}} and {{STYLE}}.';
 $string['requirepolicy'] = 'Users must accept the AI policy';
 $string['requirepolicy_desc'] = 'If this is set, each user must accept the AI policy before their requests are sent.';
 $string['restoreversion'] = 'Restore';
@@ -310,12 +323,15 @@ $string['templatetypes_fragment'] = 'Fragments';
 $string['templatetypes_prompt'] = 'Prompts';
 $string['test'] = 'Test';
 $string['testfailed'] = 'The test of "{$a}" did not work.';
+$string['testimage'] = 'A photorealistic image of a single swan standing on the grass near the edge of a pond.';
 $string['testprompt'] = 'Reply with one word: OK';
 $string['testspeech'] = 'Hello. This is a test.';
 $string['testsucceeded'] = 'The test of "{$a}" worked.';
 $string['tokendefaults'] = 'Default values';
-$string['tokendefaults_help'] = 'Default values for tokens in the request template, as a JSON object, e.g. {"VOICE": "alloy", "MAXTOKENS": "2000"}. A plugin can give other values when it sends a request.';
+$string['tokendefaults_help'] = 'Default values for tokens in the request template, as a JSON object, e.g. {"VOICE": "alloy", "MAXTOKENS": "2000"}. A plugin can give other values when it sends a request. For conversations, VOICES_FEMALE, VOICES_MALE and VOICES are lists of voices, separated by commas. For images, SIZE_SQUARE, SIZE_LANDSCAPE, SIZE_PORTRAIT, RATIO_..., QUALITY_STANDARD and QUALITY_HD give the provider\'s own values.';
 $string['tokens'] = 'Tokens (in / out)';
+$string['trymedia'] = 'Make media';
+$string['trymedia_help'] = 'Paste a media marker, such as [[IMAGE a description]] or [[AUDIO some text]], or a conversation with a line for each speaker, then lines such as "A: Hello." The media is made by the providers that you can use here, and each request is logged.';
 $string['type'] = 'Type';
 $string['url'] = 'URL';
 $string['url_help'] = 'The URL that requests are sent to. Tokens: {{MODEL}} and {{APIKEY}}, e.g. for providers that put the model in the URL. Where possible, put the API key in the headers, not the URL, because URLs may be logged, e.g. when a URL is blocked.';
