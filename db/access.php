@@ -66,4 +66,33 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
+
+    // Manage every template in the library, and share templates with the whole site.
+    'tool/aibridge:managetemplates' => [
+        'riskbitmask' => RISK_CONFIG,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+
+    // Add templates to the library, and share them in this context.
+    'tool/aibridge:addtemplate' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+
+    // Use the templates that are shared in this context.
+    'tool/aibridge:usetemplate' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => [
+            'user' => CAP_ALLOW,
+        ],
+    ],
 ];

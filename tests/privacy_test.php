@@ -58,6 +58,12 @@ final class privacy_test extends \core_privacy\tests\provider_testcase {
             'name' => 'Teacher GPT', 'ownerid' => $this->teacher->id, 'contextid' => $this->context->id,
             'apikey' => 'sk-teacher-secret',
         ]);
+        \tool_aibridge\library\template::save((object) ['type' => 'fragment', 'name' => 'Shared rules',
+            'shortname' => 'shared-rules', 'body' => 'x', 'ownerid' => $this->teacher->id,
+            'contextid' => $this->context->id], $this->teacher->id);
+        \tool_aibridge\library\template::save((object) ['type' => 'fragment', 'name' => 'My rules',
+            'shortname' => 'my-rules', 'body' => 'y', 'ownerid' => $this->teacher->id,
+            'contextid' => \context_user::instance($this->teacher->id)->id], $this->teacher->id);
         foreach ([$this->teacher, $this->student] as $user) {
             policy::accept($user->id, $this->context->id);
             \curl::mock_response('{"choices": [{"message": {"content": "Hi"}}]}');
@@ -99,6 +105,12 @@ final class privacy_test extends \core_privacy\tests\provider_testcase {
         $this->assertStringNotContainsString('sk-teacher-secret', json_encode($providers));
         $this->assertFalse(property_exists($providers->providers[0], 'apikey'));
 
+        $templates = $writer->get_data([$plugin, get_string('library', 'tool_aibridge')]);
+        $this->assertSame('Shared rules', $templates->templates[0]->name);
+        $templates = writer::with_context(\context_user::instance($this->teacher->id))
+            ->get_data([$plugin, get_string('library', 'tool_aibridge')]);
+        $this->assertSame('My rules', $templates->templates[0]->name);
+
         $policy = writer::with_context(\context_user::instance($this->teacher->id))
                 ->get_data([$plugin, get_string('policy', 'tool_aibridge')]);
         $this->assertNotEmpty($policy->timeaccepted);
@@ -118,6 +130,11 @@ final class privacy_test extends \core_privacy\tests\provider_testcase {
         $this->assertFalse($DB->record_exists(logger::TABLE, ['userid' => $this->teacher->id]));
         $this->assertFalse($DB->record_exists(provider::TABLE, ['ownerid' => $this->teacher->id]));
         $this->assertFalse($DB->record_exists(policy::TABLE, ['userid' => $this->teacher->id]));
+        // The shared template is kept, without its owner; the personal one is deleted.
+        $shared = $DB->get_record('tool_aibridge_templates', ['shortname' => 'shared-rules']);
+        $this->assertEquals(0, $shared->ownerid);
+        $this->assertEquals(0, $DB->get_field('tool_aibridge_tpl_versions', 'userid', ['templateid' => $shared->id]));
+        $this->assertFalse($DB->record_exists('tool_aibridge_templates', ['shortname' => 'my-rules']));
         $this->assertTrue($DB->record_exists(logger::TABLE, ['userid' => $this->student->id]));
         $this->assertTrue($DB->record_exists(policy::TABLE, ['userid' => $this->student->id]));
     }

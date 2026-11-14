@@ -24,7 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-if ($hassiteconfig || has_capability('tool/aibridge:manageproviders', context_system::instance())) {
+$systemcontext = context_system::instance();
+if (
+    $hassiteconfig || has_capability('tool/aibridge:manageproviders', $systemcontext)
+        || has_capability('tool/aibridge:managetemplates', $systemcontext)
+) {
     // Moodle 4.5 and later have an "AI" category; earlier versions put the bridge under "Admin tools".
     $parent = $ADMIN->locate('ai') ? 'ai' : 'tools';
     $ADMIN->add($parent, new admin_category('tool_aibridge', new lang_string('pluginname', 'tool_aibridge')));

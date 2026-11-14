@@ -1,0 +1,9 @@
+.path-admin-tool-aibridge pre.tool-aibridge-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 40em;
+    overflow-y: auto;
+}
+.path-admin-tool-aibridge .tool-aibridge-buttons {
+    gap: 0.5rem;
+}

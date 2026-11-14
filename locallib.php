@@ -62,3 +62,94 @@ function tool_aibridge_setup_page(
     $PAGE->set_title($title);
     $PAGE->set_heading($context->contextlevel == CONTEXT_SYSTEM ? $title : $context->get_context_name(false));
 }
+
+/**
+ * Show the fields of a template.
+ *
+ * @param \tool_aibridge\library\template $template
+ * @return string HTML.
+ */
+function tool_aibridge_template_details(\tool_aibridge\library\template $template): string {
+    $record = $template->get_record();
+    $rows = [
+        get_string('shortname', 'tool_aibridge') => s($record->shortname),
+        get_string('type', 'tool_aibridge') => get_string('templatetype_' . $record->type, 'tool_aibridge'),
+        get_string('version') => $record->version,
+    ];
+    if ($record->description !== '' && $record->description !== null) {
+        $rows[get_string('description')] = s($record->description);
+    }
+    if ($parent = $template->get_parent()) {
+        $rows[get_string('extends', 'tool_aibridge')] = s($parent->get_name() . ' (' . $parent->get_shortname() . ')');
+    }
+    if ($record->type === \tool_aibridge\library\template::TYPE_FORMAT) {
+        $qformats = \tool_aibridge\library\template::get_qformat_options();
+        $rows[get_string('qformat', 'tool_aibridge')] = isset($qformats[$record->qformat]) ? $qformats[$record->qformat] : '';
+    }
+    $fields = [
+        'body' => get_string('body_' . $record->type, 'tool_aibridge'),
+        'instructions' => get_string('instructions', 'tool_aibridge'),
+        'examples' => get_string('examples', 'tool_aibridge'),
+    ];
+    foreach ($fields as $field => $label) {
+        if (trim((string) $record->$field) !== '') {
+            $rows[$label] = html_writer::tag('pre', s($record->$field), ['class' => 'tool-aibridge-text']);
+        }
+    }
+    if ($links = $template->get_formatlinks()) {
+        $rows[get_string('formatlinks', 'tool_aibridge')] = html_writer::tag(
+            'pre',
+            s(\tool_aibridge\form\template_form::write_formatlinks($links)),
+            ['class' => 'tool-aibridge-text']
+        );
+    }
+    if (trim((string) $record->parameters) !== '') {
+        $rows[get_string('parameters', 'tool_aibridge')] = html_writer::tag(
+            'pre',
+            s($record->parameters),
+            ['class' => 'tool-aibridge-text']
+        );
+    }
+    $table = new html_table();
+    $table->attributes['class'] = 'generaltable';
+    foreach ($rows as $label => $value) {
+        $table->data[] = [html_writer::tag('strong', $label), $value];
+    }
+    return html_writer::table($table);
+}
+
+/**
+ * Show the versions of a template.
+ *
+ * @param \tool_aibridge\library\template $template
+ * @param bool $canrestore
+ * @return string HTML.
+ */
+function tool_aibridge_template_versions(\tool_aibridge\library\template $template, bool $canrestore): string {
+    global $DB, $OUTPUT, $PAGE;
+    $versions = $template->get_versions();
+    if (count($versions) < 2) {
+        return '';
+    }
+    $table = new html_table();
+    $table->head = [get_string('version'), get_string('time'), get_string('user'), get_string('name'), ''];
+    $table->attributes['class'] = 'generaltable';
+    foreach ($versions as $version) {
+        $user = $version->userid ? $DB->get_record('user', ['id' => $version->userid]) : null;
+        $action = '';
+        if ($canrestore && $version->version != $template->get_version()) {
+            $url = new moodle_url($PAGE->url, ['action' => 'restore', 'version' => $version->version, 'sesskey' => sesskey()]);
+            $action = $OUTPUT->single_button($url, get_string('restoreversion', 'tool_aibridge'), 'post');
+        }
+        $body = html_writer::tag('details', html_writer::tag('summary', s($version->name)) .
+            html_writer::tag('pre', s($version->body), ['class' => 'tool-aibridge-text']));
+        $table->data[] = [
+            $version->version,
+            userdate($version->timecreated, get_string('strftimedatetimeshort', 'langconfig')),
+            $user ? fullname($user) : '-',
+            $body,
+            $action,
+        ];
+    }
+    return $OUTPUT->heading(get_string('versions', 'tool_aibridge'), 3) . html_writer::table($table);
+}

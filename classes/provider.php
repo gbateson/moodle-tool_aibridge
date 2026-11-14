@@ -239,19 +239,7 @@ class provider {
      * @return bool
      */
     public function is_active(?int $time = null): bool {
-        if ($time === null) {
-            $time = time();
-        }
-        if (empty($this->record->enabled)) {
-            return false;
-        }
-        if ($this->record->sharedfrom && $time < $this->record->sharedfrom) {
-            return false;
-        }
-        if ($this->record->shareduntil && $time > $this->record->shareduntil) {
-            return false;
-        }
-        return true;
+        return sharing::is_active($this->record, $time);
     }
 
     /**
@@ -262,22 +250,13 @@ class provider {
      * @return bool
      */
     public function can_use(\context $context, int $userid): bool {
-        if (!$this->is_active()) {
-            return false;
-        }
-        if ($this->record->ownerid == $userid) {
-            return true;
-        }
-        if ($this->is_personal()) {
-            return false;
-        }
-        if ($this->record->contextid != SYSCONTEXTID && !get_config('tool_aibridge', 'allowuserproviders')) {
-            return false;
-        }
-        if (!in_array($this->record->contextid, $context->get_parent_context_ids(true))) {
-            return false;
-        }
-        return has_capability('tool/aibridge:useprovider', $context, $userid);
+        return sharing::can_use(
+            $this->record,
+            $context,
+            $userid,
+            'tool/aibridge:useprovider',
+            (bool) get_config('tool_aibridge', 'allowuserproviders')
+        );
     }
 
     /**
@@ -384,21 +363,13 @@ class provider {
      * @return string[] context id => name.
      */
     public static function get_sharing_options(\context $context, int $userid): array {
-        $options = [\context_user::instance($userid)->id => get_string('shareonlyme', 'tool_aibridge')];
-        if (get_config('tool_aibridge', 'allowuserproviders')) {
-            foreach (array_reverse($context->get_parent_contexts(true)) as $parent) {
-                if ($parent->contextlevel == CONTEXT_COURSE || $parent->contextlevel == CONTEXT_COURSECAT) {
-                    if (has_capability('tool/aibridge:addprovider', $parent, $userid)) {
-                        $options[$parent->id] = $parent->get_context_name();
-                    }
-                }
-            }
-        }
-        $system = \context_system::instance();
-        if (has_capability('tool/aibridge:manageproviders', $system, $userid)) {
-            $options[$system->id] = get_string('sharesite', 'tool_aibridge');
-        }
-        return $options;
+        return sharing::get_options(
+            $context,
+            $userid,
+            'tool/aibridge:addprovider',
+            'tool/aibridge:manageproviders',
+            (bool) get_config('tool_aibridge', 'allowuserproviders')
+        );
     }
 
     /**

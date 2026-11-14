@@ -43,6 +43,12 @@ abstract class base {
     /** @var string what the plugin makes the request for, e.g. "questions". */
     protected $purpose = '';
 
+    /** @var int the id of the prompt template that made the prompt, or 0. */
+    protected $templateid = 0;
+
+    /** @var int the version of the prompt template. */
+    protected $templateversion = 0;
+
     /** @var array extra tokens for the request template, e.g. MAXTOKENS. */
     protected $tokens = [];
 
@@ -78,6 +84,37 @@ abstract class base {
         $this->component = $component;
         $this->purpose = $purpose;
         return $this;
+    }
+
+    /**
+     * Say which prompt template, and which version of it, made the prompt. This is shown in the log.
+     *
+     * @param int $templateid
+     * @param int $version
+     * @return base
+     */
+    public function set_template(int $templateid, int $version): base {
+        $this->templateid = $templateid;
+        $this->templateversion = $version;
+        return $this;
+    }
+
+    /**
+     * Get the id of the prompt template that made the prompt.
+     *
+     * @return int
+     */
+    public function get_templateid(): int {
+        return $this->templateid;
+    }
+
+    /**
+     * Get the version of the prompt template.
+     *
+     * @return int
+     */
+    public function get_templateversion(): int {
+        return $this->templateversion;
     }
 
     /**

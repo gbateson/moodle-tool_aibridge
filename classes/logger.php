@@ -54,6 +54,8 @@ class logger {
             'error' => $response->get_error(),
             'prompttokens' => $response->get_prompttokens(),
             'completiontokens' => $response->get_completiontokens(),
+            'templateid' => $action->get_templateid(),
+            'templateversion' => $action->get_templateversion(),
             'prompt' => null,
             'response' => null,
             'timecreated' => $timecreated,

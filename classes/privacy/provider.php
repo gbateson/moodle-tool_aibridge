@@ -53,6 +53,7 @@ class provider implements
             'action' => 'privacy:metadata:log:action',
             'providername' => 'privacy:metadata:log:providername',
             'model' => 'privacy:metadata:log:model',
+            'templateid' => 'privacy:metadata:log:templateid',
             'prompt' => 'privacy:metadata:log:prompt',
             'response' => 'privacy:metadata:log:response',
             'timecreated' => 'privacy:metadata:log:timecreated',
@@ -69,6 +70,16 @@ class provider implements
             'apikey' => 'privacy:metadata:providers:apikey',
             'timecreated' => 'privacy:metadata:providers:timecreated',
         ], 'privacy:metadata:providers');
+        $collection->add_database_table('tool_aibridge_templates', [
+            'ownerid' => 'privacy:metadata:templates:ownerid',
+            'name' => 'privacy:metadata:templates:name',
+            'body' => 'privacy:metadata:templates:body',
+            'timecreated' => 'privacy:metadata:templates:timecreated',
+        ], 'privacy:metadata:templates');
+        $collection->add_database_table('tool_aibridge_tpl_versions', [
+            'userid' => 'privacy:metadata:tplversions:userid',
+            'timecreated' => 'privacy:metadata:tplversions:timecreated',
+        ], 'privacy:metadata:tplversions');
         $collection->add_external_location_link('aiprovider', [
             'prompt' => 'privacy:metadata:aiprovider:prompt',
             'files' => 'privacy:metadata:aiprovider:files',
@@ -87,6 +98,11 @@ class provider implements
         $params = ['userid' => $userid];
         $contextlist->add_from_sql('SELECT contextid FROM {tool_aibridge_log} WHERE userid = :userid', $params);
         $contextlist->add_from_sql('SELECT contextid FROM {tool_aibridge_providers} WHERE ownerid = :userid', $params);
+        $contextlist->add_from_sql('SELECT contextid FROM {tool_aibridge_templates} WHERE ownerid = :userid', $params);
+        $contextlist->add_from_sql('SELECT t.contextid
+                                      FROM {tool_aibridge_templates} t
+                                      JOIN {tool_aibridge_tpl_versions} v ON v.templateid = t.id
+                                     WHERE v.userid = :userid', $params);
         $contextlist->add_user_context($userid);
         return $contextlist;
     }
@@ -101,6 +117,11 @@ class provider implements
         $params = ['contextid' => $context->id];
         $userlist->add_from_sql('userid', 'SELECT userid FROM {tool_aibridge_log} WHERE contextid = :contextid', $params);
         $userlist->add_from_sql('ownerid', 'SELECT ownerid FROM {tool_aibridge_providers} WHERE contextid = :contextid', $params);
+        $userlist->add_from_sql('ownerid', 'SELECT ownerid FROM {tool_aibridge_templates} WHERE contextid = :contextid', $params);
+        $userlist->add_from_sql('userid', 'SELECT v.userid
+                                              FROM {tool_aibridge_tpl_versions} v
+                                              JOIN {tool_aibridge_templates} t ON t.id = v.templateid
+                                             WHERE t.contextid = :contextid', $params);
         if ($context->contextlevel == CONTEXT_USER) {
             $params = ['userid' => $context->instanceid];
             $userlist->add_from_sql('userid', 'SELECT userid FROM {tool_aibridge_policy} WHERE userid = :userid', $params);
@@ -159,6 +180,26 @@ class provider implements
                 ), (object) ['providers' => $providers]);
             }
 
+            $templates = [];
+            $params = ['ownerid' => $userid, 'contextid' => $context->id];
+            foreach ($DB->get_records('tool_aibridge_templates', $params, 'id') as $template) {
+                $templates[] = (object) [
+                    'shortname' => $template->shortname,
+                    'type' => $template->type,
+                    'name' => $template->name,
+                    'body' => $template->body,
+                    'version' => $template->version,
+                    'timecreated' => transform::datetime($template->timecreated),
+                    'timemodified' => transform::datetime($template->timemodified),
+                ];
+            }
+            if ($templates) {
+                writer::with_context($context)->export_data(array_merge(
+                    $subcontext,
+                    [get_string('library', 'tool_aibridge')]
+                ), (object) ['templates' => $templates]);
+            }
+
             if ($context->contextlevel == CONTEXT_USER && $context->instanceid == $userid) {
                 if ($policy = $DB->get_record('tool_aibridge_policy', ['userid' => $userid])) {
                     writer::with_context($context)->export_data(
@@ -174,6 +215,46 @@ class provider implements
     }
 
     /**
+     * Delete users' templates in a context. A template that is shared is kept for the
+     * people who use it, but its owner is removed. A template only for its owner is deleted.
+     *
+     * @param \context $context
+     * @param int[]|null $userids the users, or null for every user.
+     */
+    protected static function delete_templates(\context $context, ?array $userids): void {
+        global $DB;
+        $params = ['contextid' => $context->id];
+        $select = 'contextid = :contextid';
+        if ($userids !== null) {
+            if (empty($userids)) {
+                return;
+            }
+            [$usersql, $userparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+            $select .= " AND ownerid $usersql";
+            $params = array_merge($params, $userparams);
+        }
+        $templates = $DB->get_records_select('tool_aibridge_templates', $select, $params);
+        foreach ($templates as $template) {
+            if ($context->contextlevel == CONTEXT_USER) {
+                $DB->delete_records('tool_aibridge_tpl_versions', ['templateid' => $template->id]);
+                $DB->set_field('tool_aibridge_templates', 'parentid', 0, ['parentid' => $template->id]);
+                $DB->delete_records('tool_aibridge_templates', ['id' => $template->id]);
+            } else {
+                $DB->set_field('tool_aibridge_templates', 'ownerid', 0, ['id' => $template->id]);
+            }
+        }
+        // Remove the users from the versions of templates in this context.
+        $sql = 'templateid IN (SELECT id FROM {tool_aibridge_templates} WHERE contextid = :contextid)';
+        $params = ['contextid' => $context->id];
+        if ($userids !== null) {
+            [$usersql, $userparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+            $sql .= " AND userid $usersql";
+            $params = array_merge($params, $userparams);
+        }
+        $DB->set_field_select('tool_aibridge_tpl_versions', 'userid', 0, $sql, $params);
+    }
+
+    /**
      * Delete the data of every user in a context.
      *
      * @param \context $context
@@ -182,6 +263,7 @@ class provider implements
         global $DB;
         $DB->delete_records('tool_aibridge_log', ['contextid' => $context->id]);
         $DB->delete_records('tool_aibridge_providers', ['contextid' => $context->id]);
+        self::delete_templates($context, null);
         if ($context->contextlevel == CONTEXT_USER) {
             $DB->delete_records('tool_aibridge_policy', ['userid' => $context->instanceid]);
         }
@@ -198,6 +280,7 @@ class provider implements
         foreach ($contextlist->get_contexts() as $context) {
             $DB->delete_records('tool_aibridge_log', ['userid' => $userid, 'contextid' => $context->id]);
             $DB->delete_records('tool_aibridge_providers', ['ownerid' => $userid, 'contextid' => $context->id]);
+            self::delete_templates($context, [$userid]);
             if ($context->contextlevel == CONTEXT_USER && $context->instanceid == $userid) {
                 $DB->delete_records('tool_aibridge_policy', ['userid' => $userid]);
             }
@@ -220,6 +303,7 @@ class provider implements
         $params['contextid'] = $context->id;
         $DB->delete_records_select('tool_aibridge_log', "contextid = :contextid AND userid $usersql", $params);
         $DB->delete_records_select('tool_aibridge_providers', "contextid = :contextid AND ownerid $usersql", $params);
+        self::delete_templates($context, $userids);
         if ($context->contextlevel == CONTEXT_USER && in_array($context->instanceid, $userids)) {
             $DB->delete_records('tool_aibridge_policy', ['userid' => $context->instanceid]);
         }

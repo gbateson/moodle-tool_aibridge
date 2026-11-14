@@ -36,7 +36,8 @@ function tool_aibridge_extend_navigation_course($navigation, $course, $context) 
         $canadd = has_capability('tool/aibridge:addprovider', $context);
     }
     $canviewlog = has_capability('tool/aibridge:viewlog', $context);
-    if (!$canadd && !$canviewlog) {
+    $canaddtemplate = has_capability('tool/aibridge:addtemplate', $context);
+    if (!$canadd && !$canviewlog && !$canaddtemplate) {
         return;
     }
     $params = ['contextid' => $context->id];
@@ -50,6 +51,16 @@ function tool_aibridge_extend_navigation_course($navigation, $course, $context) 
             new pix_icon('i/settings', '')
         );
     }
+    if ($canaddtemplate) {
+        $navigation->add(
+            get_string('library', 'tool_aibridge'),
+            new moodle_url('/admin/tool/aibridge/library.php', $params),
+            navigation_node::TYPE_SETTING,
+            null,
+            'tool_aibridge_library',
+            new pix_icon('i/edit', '')
+        );
+    }
     if ($canviewlog) {
         $navigation->add(
             get_string('log', 'tool_aibridge'),
@@ -60,4 +71,22 @@ function tool_aibridge_extend_navigation_course($navigation, $course, $context) 
             new pix_icon('i/report', '')
         );
     }
+}
+
+/**
+ * Before a course is deleted, keep the templates shared in it, and delete its providers.
+ *
+ * @param stdClass $course
+ */
+function tool_aibridge_pre_course_delete($course) {
+    \tool_aibridge\sharing::context_deleted(context_course::instance($course->id));
+}
+
+/**
+ * Before a course category is deleted, keep the templates shared in it, and delete its providers.
+ *
+ * @param stdClass $category
+ */
+function tool_aibridge_pre_course_category_delete($category) {
+    \tool_aibridge\sharing::context_deleted(context_coursecat::instance($category->id));
 }
