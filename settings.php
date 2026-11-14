@@ -157,6 +157,12 @@ if (
         'tool/aibridge:manageproviders'
     ));
     $ADMIN->add('tool_aibridge', new admin_externalpage(
+        'tool_aibridge_library',
+        new lang_string('library', 'tool_aibridge'),
+        new moodle_url('/admin/tool/aibridge/library.php'),
+        'tool/aibridge:managetemplates'
+    ));
+    $ADMIN->add('tool_aibridge', new admin_externalpage(
         'tool_aibridge_log',
         new lang_string('log', 'tool_aibridge'),
         new moodle_url('/admin/tool/aibridge/log.php'),
