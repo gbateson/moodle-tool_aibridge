@@ -126,6 +126,22 @@ class presets {
                 'filetemplate' => self::json(['inline_data' => ['mime_type' => '{{FILE_MIMETYPE}}', 'data' => '{{FILE_BASE64}}']]),
                 'uploadstyle' => provider::UPLOAD_INLINE_BASE64,
             ],
+            'geminiupload' => [
+                'name' => 'Gemini (large files)',
+                'capability' => provider::CAPABILITY_MULTIMODAL,
+                'url' => $geminiurl,
+                'headers' => $geminiheaders,
+                'model' => 'gemini-2.5-flash',
+                'returnpath' => 'candidates,0,content,parts,0,text',
+                'requesttemplate' => self::json([
+                    'contents' => [['parts' => ['{{FILE_PARTS}}', ['text' => '{{PROMPT}}']]]],
+                ]),
+                // Files are uploaded first, so they can be large, e.g. long videos.
+                'filetemplate' => self::json(['file_data' => ['mime_type' => '{{FILE_MIMETYPE}}', 'file_uri' => '{{FILE_URI}}']]),
+                'uploadstyle' => provider::UPLOAD_REFERENCE,
+                'uploadprotocol' => upload\uploader::PROTOCOL_GEMINI,
+                'uploadurl' => 'https://generativelanguage.googleapis.com/upload/v1beta/files',
+            ],
             'openaifiles' => [
                 'name' => 'ChatGPT (files)',
                 'capability' => provider::CAPABILITY_MULTIMODAL,

@@ -144,6 +144,8 @@ $string['errortemplatenofiles'] = 'The request template of "{$a}" has no place f
 $string['errortemplatenotfound'] = 'The template "{$a}" was not found, or cannot be used here.';
 $string['errortemplateonefile'] = 'The request template of "{$a}" can only take one file. Use {{FILE_PARTS}} to send more files.';
 $string['errortexttoolong'] = 'The text is too long. The most is {$a} characters.';
+$string['erroruploadfailed'] = 'The file could not be uploaded to the AI provider ({$a}).';
+$string['erroruploadprotocol'] = 'Unknown way of uploading files: {$a}';
 $string['errorurl'] = 'This must be a URL that starts with http:// or https://';
 $string['erroruserratelimit'] = 'You have sent the most AI requests allowed in one hour. Please try again later.';
 $string['examples'] = 'Examples';
@@ -154,7 +156,7 @@ $string['extends'] = 'Extends';
 $string['extends_help'] = 'The prompt that this prompt is based on. This prompt\'s blocks replace the blocks of the same name in that prompt, and its format links and parameters are added to that prompt\'s.';
 $string['externaldisabled'] = 'The site does not use the bridge\'s own providers, so requests are only sent to Moodle\'s own AI subsystem.';
 $string['filetemplate'] = 'File template';
-$string['filetemplate_help'] = 'The JSON part for one file, which replaces {{FILE_PARTS}} in the request template, once for each file. Tokens: {{FILE_BASE64}}, {{FILE_MIMETYPE}} and {{FILE_NAME}}.
+$string['filetemplate_help'] = 'The JSON part for one file, which replaces {{FILE_PARTS}} in the request template, once for each file. Tokens: {{FILE_BASE64}} (or {{FILE_URI}}, if files are uploaded first), {{FILE_MIMETYPE}} and {{FILE_NAME}}.
 
 For different kinds of file, use an object of MIME types, e.g. {"image/*": {...}, "application/pdf": {...}}. "*" matches any file.';
 $string['formatlinks'] = 'Formats for question types';
@@ -333,6 +335,17 @@ $string['tokens'] = 'Tokens (in / out)';
 $string['trymedia'] = 'Make media';
 $string['trymedia_help'] = 'Paste a media marker, such as [[IMAGE a description]] or [[AUDIO some text]], or a conversation with a line for each speaker, then lines such as "A: Hello." The media is made by the providers that you can use here, and each request is logged.';
 $string['type'] = 'Type';
+$string['uploadprotocol'] = 'Upload with';
+$string['uploadprotocol_gemini'] = 'Google Gemini (Files API)';
+$string['uploadstyle'] = 'Files';
+$string['uploadstyle_help'] = 'How files are sent to the provider.
+
+* **In the request**: each file is put in the request, as base64 ({{FILE_BASE64}}). This is simplest, but providers limit the size of a request, e.g. to 20 MB.
+* **Uploaded first**: each file is uploaded first, and the request refers to it ({{FILE_URI}}). Use this for large files, such as long recordings and videos.';
+$string['uploadstyle_inline'] = 'In the request';
+$string['uploadstyle_reference'] = 'Uploaded first';
+$string['uploadurl'] = 'Upload URL';
+$string['uploadurl_help'] = 'The address to which files are uploaded, e.g. https://generativelanguage.googleapis.com/upload/v1beta/files for Gemini. The API key is sent in a header, so do not put it in this URL.';
 $string['url'] = 'URL';
 $string['url_help'] = 'The URL that requests are sent to. Tokens: {{MODEL}} and {{APIKEY}}, e.g. for providers that put the model in the URL. Where possible, put the API key in the headers, not the URL, because URLs may be logged, e.g. when a URL is blocked.';
 $string['userratelimit'] = 'Requests for each user';

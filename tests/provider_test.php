@@ -102,6 +102,11 @@ final class provider_test extends \advanced_testcase {
         $names = $this->get_names(provider::get_available($context1, [provider::CAPABILITY_SPEECH], $student->id));
         $this->assertSame(['Speech'], $names);
 
+        // Shared providers are those that anyone there can use: not personal ones, nearest first.
+        $names = $this->get_names(provider::get_shared($context1, $text));
+        $this->assertSame(['Course 1', 'Category', 'Site'], $names);
+        $this->assertSame(['Site'], $this->get_names(provider::get_shared($context2, $text)));
+
         // Without the capability to use providers, only one's own providers.
         $studentrole = $this->getDataGenerator()->create_role();
         assign_capability('tool/aibridge:useprovider', CAP_PROHIBIT, $studentrole, $context1->id);

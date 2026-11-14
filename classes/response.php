@@ -39,6 +39,12 @@ class response {
     /** @var string the error message, with any API key removed. */
     protected $error = '';
 
+    /** @var int the HTTP status code of a failed request, or 0 if there was none. */
+    protected $httpcode = 0;
+
+    /** Error codes for failures that may not happen if the request is sent again later. */
+    const TEMPORARY_ERRORS = ['replynotjson', 'replynotext', 'siteratelimit', 'userratelimit', 'providerratelimit'];
+
     /** @var string the generated text. */
     protected $content = '';
 
@@ -142,7 +148,22 @@ class response {
         string $providername = ''
     ): response {
         $errorcode = preg_replace('/^error(?=[a-z])/', '', $e->errorcode);
-        return self::failure($errorcode, $error, $route, $providerid, $providername);
+        $response = self::failure($errorcode, $error, $route, $providerid, $providername);
+        if ($e instanceof request_exception) {
+            $response->httpcode = $e->httpcode;
+        }
+        return $response;
+    }
+
+    /**
+     * Set the HTTP status code of a failed request.
+     *
+     * @param int $httpcode
+     * @return response
+     */
+    public function set_httpcode(int $httpcode): response {
+        $this->httpcode = $httpcode;
+        return $this;
     }
 
     /**
@@ -246,6 +267,34 @@ class response {
      */
     public function get_error(): string {
         return $this->error;
+    }
+
+    /**
+     * Get the HTTP status code of a failed request.
+     *
+     * @return int the code, or 0 if the request was not sent, or got no reply.
+     */
+    public function get_httpcode(): int {
+        return $this->httpcode;
+    }
+
+    /**
+     * Might the request succeed if it is sent again later? This is so for no
+     * connection, a timeout, a busy provider (HTTP 408, 429 and 5xx), a reply
+     * that cannot be read, and rate limits. Background tasks can use this to
+     * decide whether to try again.
+     *
+     * @return bool
+     */
+    public function is_temporary(): bool {
+        if ($this->success) {
+            return false;
+        }
+        if ($this->errorcode === 'request' || $this->errorcode === 'core') {
+            $code = $this->httpcode;
+            return ($code === 0 || $code === 408 || $code === 429 || $code >= 500);
+        }
+        return in_array($this->errorcode, self::TEMPORARY_ERRORS);
     }
 
     /**

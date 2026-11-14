@@ -126,6 +126,25 @@ class provider_form extends \moodleform {
         $mform->addHelpButton('filetemplate', 'filetemplate', 'tool_aibridge');
         $mform->hideIf('filetemplate', 'capability', 'neq', provider::CAPABILITY_MULTIMODAL);
 
+        $options = [
+            provider::UPLOAD_INLINE_BASE64 => get_string('uploadstyle_inline', 'tool_aibridge'),
+            provider::UPLOAD_REFERENCE => get_string('uploadstyle_reference', 'tool_aibridge'),
+        ];
+        $mform->addElement('select', 'uploadstyle', get_string('uploadstyle', 'tool_aibridge'), $options);
+        $mform->addHelpButton('uploadstyle', 'uploadstyle', 'tool_aibridge');
+        $mform->hideIf('uploadstyle', 'capability', 'neq', provider::CAPABILITY_MULTIMODAL);
+
+        $options = \tool_aibridge\upload\uploader::get_protocol_options();
+        $mform->addElement('select', 'uploadprotocol', get_string('uploadprotocol', 'tool_aibridge'), $options);
+        $mform->hideIf('uploadprotocol', 'capability', 'neq', provider::CAPABILITY_MULTIMODAL);
+        $mform->hideIf('uploadprotocol', 'uploadstyle', 'neq', provider::UPLOAD_REFERENCE);
+
+        $mform->addElement('text', 'uploadurl', get_string('uploadurl', 'tool_aibridge'), ['size' => 60]);
+        $mform->setType('uploadurl', PARAM_RAW_TRIMMED);
+        $mform->addHelpButton('uploadurl', 'uploadurl', 'tool_aibridge');
+        $mform->hideIf('uploadurl', 'capability', 'neq', provider::CAPABILITY_MULTIMODAL);
+        $mform->hideIf('uploadurl', 'uploadstyle', 'neq', provider::UPLOAD_REFERENCE);
+
         $mform->addElement('text', 'returnpath', get_string('returnpath', 'tool_aibridge'), ['size' => 60]);
         $mform->setType('returnpath', PARAM_RAW_TRIMMED);
         $mform->addHelpButton('returnpath', 'returnpath', 'tool_aibridge');

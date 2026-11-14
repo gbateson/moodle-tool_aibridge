@@ -55,6 +55,14 @@ if ($id) {
     }
     // Keep the provider's own sharing, even if this user could not choose it.
     $record = $provider->get_record();
+    if ($record->capability == provider::CAPABILITY_MULTIMODAL) {
+        // Fields hidden by the form are not sent, so they may be missing.
+        $record->uploadstyle = $data->uploadstyle ?? provider::UPLOAD_INLINE_BASE64;
+        if ($record->uploadstyle == provider::UPLOAD_REFERENCE) {
+            $record->uploadprotocol = $data->uploadprotocol ?? '';
+            $record->uploadurl = trim($data->uploadurl ?? '');
+        }
+    }
     if (!isset($sharingoptions[$record->contextid])) {
         $sharedcontext = context::instance_by_id($record->contextid, IGNORE_MISSING);
         $sharingoptions[$record->contextid] = $sharedcontext ? $sharedcontext->get_context_name() : '?';
@@ -90,8 +98,9 @@ if ($data = $form->get_data()) {
         'filetemplate' => trim($data->filetemplate ?? ''),
         'returnpath' => trim($data->returnpath ?? ''),
         'tokendefaults' => trim($data->tokendefaults ?? ''),
-        'uploadstyle' => ($data->capability == provider::CAPABILITY_MULTIMODAL)
-                ? provider::UPLOAD_INLINE_BASE64 : provider::UPLOAD_NONE,
+        'uploadstyle' => provider::UPLOAD_NONE,
+        'uploadprotocol' => '',
+        'uploadurl' => '',
         'datanotice' => trim($data->datanotice ?? ''),
         'userratelimit' => max(0, (int) $data->userratelimit),
         'sharedfrom' => empty($data->sharedfrom) ? 0 : $data->sharedfrom,

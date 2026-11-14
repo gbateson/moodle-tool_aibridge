@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'tool_aibridge';
-$plugin->version   = 2026111404;
-$plugin->release   = '2026-11-14 (04)';
+$plugin->version   = 2026111405;
+$plugin->release   = '2026-11-14 (05)';
 $plugin->requires  = 2021051700; // Moodle 3.11.
 $plugin->maturity  = MATURITY_ALPHA;

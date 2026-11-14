@@ -47,6 +47,9 @@ class provider {
     /** Files are sent inline, as base64. */
     const UPLOAD_INLINE_BASE64 = 'inline_base64';
 
+    /** Files are uploaded first, and the request refers to them (see the upload classes). */
+    const UPLOAD_REFERENCE = 'upload_reference';
+
     /** The table of providers. */
     const TABLE = 'tool_aibridge_providers';
 
@@ -323,6 +326,38 @@ class provider {
             }
             return $a->id - $b->id;
         });
+        return $providers;
+    }
+
+    /**
+     * Get the providers shared in a context or the contexts above it, but not
+     * personal providers. These are the providers that anyone there with the
+     * capability to use providers can use, e.g. for a question whose responses
+     * are assessed for students. Nearest first.
+     *
+     * @param \context $context
+     * @param string[] $capabilities the capabilities the provider must have, any one of them.
+     * @return provider[] provider id => provider.
+     */
+    public static function get_shared(\context $context, array $capabilities): array {
+        global $DB;
+        if (empty($capabilities)) {
+            return [];
+        }
+        [$capsql, $params] = $DB->get_in_or_equal($capabilities, SQL_PARAMS_NAMED, 'cap');
+        [$ctxsql, $ctxparams] = $DB->get_in_or_equal($context->get_parent_context_ids(true), SQL_PARAMS_NAMED, 'ctx');
+        $sql = "SELECT p.*
+                   FROM {" . self::TABLE . "} p
+                   JOIN {context} ctx ON ctx.id = p.contextid
+                  WHERE p.enabled = 1 AND p.capability $capsql AND p.contextid $ctxsql
+               ORDER BY ctx.depth DESC, p.sortorder, p.id";
+        $providers = [];
+        foreach ($DB->get_records_sql($sql, array_merge($params, $ctxparams)) as $record) {
+            $provider = new provider($record);
+            if ($provider->is_active()) {
+                $providers[$record->id] = $provider;
+            }
+        }
         return $providers;
     }
 

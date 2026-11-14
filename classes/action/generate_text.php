@@ -155,7 +155,8 @@ class generate_text extends base {
             if (method_exists($coreresponse, 'get_error') && $coreresponse->get_error() !== $error) {
                 $error = trim($coreresponse->get_error() . ' ' . $error);
             }
-            return response::failure('core', $error, response::ROUTE_CORE, 0, $name);
+            return response::failure('core', $error, response::ROUTE_CORE, 0, $name)
+                ->set_httpcode((int) $coreresponse->get_errorcode());
         }
         $data = $coreresponse->get_response_data();
         $prompttokens = isset($data['prompttokens']) ? (int) $data['prompttokens'] : null;

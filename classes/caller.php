@@ -66,7 +66,7 @@ class caller {
             if ($record->capability !== provider::CAPABILITY_MULTIMODAL) {
                 throw new \moodle_exception('errornotmultimodal', 'tool_aibridge', '', $record->name);
             }
-            $fileparts = self::get_file_parts($record, $template, $files, $tokens);
+            $fileparts = self::get_file_parts($provider, $template, $files, $tokens);
         }
         foreach (self::FILE_TOKENS as $name) {
             if (!isset($tokens[$name])) {
@@ -91,14 +91,15 @@ class caller {
     /**
      * Build the file parts of a request, or add one file's tokens to the tokens.
      *
-     * @param \stdClass $record the provider record.
+     * @param provider $provider
      * @param string $template the request template.
      * @param \stored_file[] $files
      * @param array $tokens the tokens, to which a single file's tokens are added.
      * @return string the file parts, each followed by a comma.
      * @throws \moodle_exception
      */
-    protected static function get_file_parts(\stdClass $record, string $template, array $files, array &$tokens): string {
+    protected static function get_file_parts(provider $provider, string $template, array $files, array &$tokens): string {
+        $record = $provider->get_record();
         $usesparts = (strpos($template, '{{FILE_PARTS}}') !== false);
         if (!$usesparts && strpos($template, '{{FILE_BASE64}}') === false && strpos($template, '{{FILE_URI}}') === false) {
             // Without a slot for the files, some providers quietly ignore them.
@@ -112,7 +113,7 @@ class caller {
         }
         $parts = '';
         foreach (array_values($files) as $file) {
-            $filetokens = self::get_file_tokens($file);
+            $filetokens = self::get_file_tokens($file, $provider);
             if ($usesparts) {
                 $part = self::choose_file_part((string) $record->filetemplate, $file->get_mimetype());
                 $parts .= self::substitute_escaped($part, $filetokens) . ', ';
@@ -124,12 +125,18 @@ class caller {
     }
 
     /**
-     * Get the tokens for one file, which is sent inline as base64.
+     * Get the tokens for one file. The file is sent inline as base64 or, if
+     * the provider takes uploads, uploaded first and referred to by its URI.
      *
      * @param \stored_file $file
+     * @param provider|null $provider
      * @return array
      */
-    public static function get_file_tokens(\stored_file $file): array {
+    public static function get_file_tokens(\stored_file $file, ?provider $provider = null): array {
+        if ($provider && $provider->get_record()->uploadstyle === provider::UPLOAD_REFERENCE) {
+            $uploader = upload\uploader::create((string) $provider->get_record()->uploadprotocol);
+            return $uploader->upload($file, $provider) + ['FILE_BASE64' => ''];
+        }
         return [
             'FILE_BASE64' => base64_encode($file->get_content()),
             'FILE_MIMETYPE' => $file->get_mimetype(),
