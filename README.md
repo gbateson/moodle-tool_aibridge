@@ -268,6 +268,16 @@ and calls `\tool_aibridge\library::sync_component('mod_vocab')` in its
 install and upgrade steps (the bridge also syncs every plugin's templates
 when it is upgraded).
 
+## Fine-tuning
+
+On the "Fine-tuning" page, teachers can tune the model of one of their own
+providers with an OpenAI-style API, from a training file of examples (JSONL,
+one example conversation on each line, at least 10). A scheduled task sends
+the file to the provider, starts the job and checks it every five minutes.
+When the job has finished, a new provider is added, like the first one but
+with the tuned model, and shared where the teacher chose; it can then be
+used like any other provider. Fine-tuning has a cost at the provider.
+
 ## Request templates
 
 A provider's request template is the JSON body of each request, with tokens

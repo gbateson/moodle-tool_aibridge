@@ -80,9 +80,18 @@ class provider implements
             'userid' => 'privacy:metadata:tplversions:userid',
             'timecreated' => 'privacy:metadata:tplversions:timecreated',
         ], 'privacy:metadata:tplversions');
+        $collection->add_database_table('tool_aibridge_tunings', [
+            'ownerid' => 'privacy:metadata:tunings:ownerid',
+            'name' => 'privacy:metadata:tunings:name',
+            'basemodel' => 'privacy:metadata:tunings:basemodel',
+            'tunedmodel' => 'privacy:metadata:tunings:tunedmodel',
+            'timecreated' => 'privacy:metadata:tunings:timecreated',
+        ], 'privacy:metadata:tunings');
+        $collection->add_subsystem_link('core_files', [], 'privacy:metadata:core_files');
         $collection->add_external_location_link('aiprovider', [
             'prompt' => 'privacy:metadata:aiprovider:prompt',
             'files' => 'privacy:metadata:aiprovider:files',
+            'trainingfile' => 'privacy:metadata:aiprovider:trainingfile',
         ], 'privacy:metadata:aiprovider');
         return $collection;
     }
@@ -99,6 +108,7 @@ class provider implements
         $contextlist->add_from_sql('SELECT contextid FROM {tool_aibridge_log} WHERE userid = :userid', $params);
         $contextlist->add_from_sql('SELECT contextid FROM {tool_aibridge_providers} WHERE ownerid = :userid', $params);
         $contextlist->add_from_sql('SELECT contextid FROM {tool_aibridge_templates} WHERE ownerid = :userid', $params);
+        $contextlist->add_from_sql('SELECT contextid FROM {tool_aibridge_tunings} WHERE ownerid = :userid', $params);
         $contextlist->add_from_sql('SELECT t.contextid
                                       FROM {tool_aibridge_templates} t
                                       JOIN {tool_aibridge_tpl_versions} v ON v.templateid = t.id
@@ -118,6 +128,7 @@ class provider implements
         $userlist->add_from_sql('userid', 'SELECT userid FROM {tool_aibridge_log} WHERE contextid = :contextid', $params);
         $userlist->add_from_sql('ownerid', 'SELECT ownerid FROM {tool_aibridge_providers} WHERE contextid = :contextid', $params);
         $userlist->add_from_sql('ownerid', 'SELECT ownerid FROM {tool_aibridge_templates} WHERE contextid = :contextid', $params);
+        $userlist->add_from_sql('ownerid', 'SELECT ownerid FROM {tool_aibridge_tunings} WHERE contextid = :contextid', $params);
         $userlist->add_from_sql('userid', 'SELECT v.userid
                                               FROM {tool_aibridge_tpl_versions} v
                                               JOIN {tool_aibridge_templates} t ON t.id = v.templateid
@@ -200,6 +211,31 @@ class provider implements
                 ), (object) ['templates' => $templates]);
             }
 
+            $tunings = [];
+            $params = ['ownerid' => $userid, 'contextid' => $context->id];
+            foreach ($DB->get_records('tool_aibridge_tunings', $params, 'id') as $tuning) {
+                $tunings[] = (object) [
+                    'name' => $tuning->name,
+                    'basemodel' => $tuning->basemodel,
+                    'status' => $tuning->status,
+                    'tunedmodel' => $tuning->tunedmodel,
+                    'timecreated' => transform::datetime($tuning->timecreated),
+                    'timemodified' => transform::datetime($tuning->timemodified),
+                ];
+                writer::with_context($context)->export_area_files(
+                    array_merge($subcontext, [get_string('tunings', 'tool_aibridge')]),
+                    'tool_aibridge',
+                    \tool_aibridge\tuning::FILEAREA,
+                    $tuning->id
+                );
+            }
+            if ($tunings) {
+                writer::with_context($context)->export_data(array_merge(
+                    $subcontext,
+                    [get_string('tunings', 'tool_aibridge')]
+                ), (object) ['tunings' => $tunings]);
+            }
+
             if ($context->contextlevel == CONTEXT_USER && $context->instanceid == $userid) {
                 if ($policy = $DB->get_record('tool_aibridge_policy', ['userid' => $userid])) {
                     writer::with_context($context)->export_data(
@@ -255,6 +291,19 @@ class provider implements
     }
 
     /**
+     * Delete fine-tuning jobs, and their training files.
+     *
+     * @param string $select
+     * @param array $params
+     */
+    protected static function delete_tunings(string $select, array $params): void {
+        global $DB;
+        foreach ($DB->get_records_select('tool_aibridge_tunings', $select, $params, '', 'id') as $record) {
+            \tool_aibridge\tuning::get($record->id)->delete();
+        }
+    }
+
+    /**
      * Delete the data of every user in a context.
      *
      * @param \context $context
@@ -263,6 +312,7 @@ class provider implements
         global $DB;
         $DB->delete_records('tool_aibridge_log', ['contextid' => $context->id]);
         $DB->delete_records('tool_aibridge_providers', ['contextid' => $context->id]);
+        self::delete_tunings('contextid = :contextid', ['contextid' => $context->id]);
         self::delete_templates($context, null);
         if ($context->contextlevel == CONTEXT_USER) {
             $DB->delete_records('tool_aibridge_policy', ['userid' => $context->instanceid]);
@@ -280,6 +330,8 @@ class provider implements
         foreach ($contextlist->get_contexts() as $context) {
             $DB->delete_records('tool_aibridge_log', ['userid' => $userid, 'contextid' => $context->id]);
             $DB->delete_records('tool_aibridge_providers', ['ownerid' => $userid, 'contextid' => $context->id]);
+            $params = ['ownerid' => $userid, 'contextid' => $context->id];
+            self::delete_tunings('ownerid = :ownerid AND contextid = :contextid', $params);
             self::delete_templates($context, [$userid]);
             if ($context->contextlevel == CONTEXT_USER && $context->instanceid == $userid) {
                 $DB->delete_records('tool_aibridge_policy', ['userid' => $userid]);
@@ -303,6 +355,7 @@ class provider implements
         $params['contextid'] = $context->id;
         $DB->delete_records_select('tool_aibridge_log', "contextid = :contextid AND userid $usersql", $params);
         $DB->delete_records_select('tool_aibridge_providers', "contextid = :contextid AND ownerid $usersql", $params);
+        self::delete_tunings("contextid = :contextid AND ownerid $usersql", $params);
         self::delete_templates($context, $userids);
         if ($context->contextlevel == CONTEXT_USER && in_array($context->instanceid, $userids)) {
             $DB->delete_records('tool_aibridge_policy', ['userid' => $context->instanceid]);

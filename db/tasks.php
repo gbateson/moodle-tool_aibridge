@@ -26,6 +26,15 @@ defined('MOODLE_INTERNAL') || die();
 
 $tasks = [
     [
+        'classname' => 'tool_aibridge\task\advance_tunings',
+        'blocking' => 0,
+        'minute' => '*/5',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
+    [
         'classname' => 'tool_aibridge\task\cleanup_log',
         'blocking' => 0,
         'minute' => 'R',

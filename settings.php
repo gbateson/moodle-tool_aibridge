@@ -157,6 +157,12 @@ if (
         'tool/aibridge:manageproviders'
     ));
     $ADMIN->add('tool_aibridge', new admin_externalpage(
+        'tool_aibridge_tunings',
+        new lang_string('tunings', 'tool_aibridge'),
+        new moodle_url('/admin/tool/aibridge/tunings.php'),
+        'tool/aibridge:manageproviders'
+    ));
+    $ADMIN->add('tool_aibridge', new admin_externalpage(
         'tool_aibridge_library',
         new lang_string('library', 'tool_aibridge'),
         new moodle_url('/admin/tool/aibridge/library.php'),

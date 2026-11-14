@@ -51,6 +51,16 @@ function tool_aibridge_extend_navigation_course($navigation, $course, $context) 
             new pix_icon('i/settings', '')
         );
     }
+    if ($canadd) {
+        $navigation->add(
+            get_string('tunings', 'tool_aibridge'),
+            new moodle_url('/admin/tool/aibridge/tunings.php', $params),
+            navigation_node::TYPE_SETTING,
+            null,
+            'tool_aibridge_tunings',
+            new pix_icon('i/settings', '')
+        );
+    }
     if ($canaddtemplate) {
         $navigation->add(
             get_string('library', 'tool_aibridge'),

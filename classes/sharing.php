@@ -185,8 +185,8 @@ class sharing {
 
     /**
      * A course or category is about to be deleted. The templates shared there become
-     * their owners' own templates; the providers shared there are deleted, since they
-     * hold API keys that were only shared for that place.
+     * their owners' own templates; the providers and fine-tuning jobs shared there are
+     * deleted, since they hold API keys that were only shared for that place.
      *
      * @param \context $context
      */
@@ -195,6 +195,9 @@ class sharing {
         $providers = $DB->get_records(provider::TABLE, ['contextid' => $context->id], '', 'id');
         foreach ($providers as $record) {
             provider::get($record->id)->delete();
+        }
+        foreach ($DB->get_records(tuning::TABLE, ['contextid' => $context->id], '', 'id') as $record) {
+            tuning::get($record->id)->delete();
         }
         $templates = $DB->get_records(library\template::TABLE, ['contextid' => $context->id], '', 'id, ownerid');
         foreach ($templates as $record) {
@@ -205,8 +208,8 @@ class sharing {
     }
 
     /**
-     * A user was deleted: delete their personal providers and templates. Templates that they
-     * shared are kept for the people who use them.
+     * A user was deleted: delete their providers, fine-tuning jobs and personal templates.
+     * Templates that they shared are kept for the people who use them.
      *
      * @param \core\event\user_deleted $event
      */
@@ -215,6 +218,9 @@ class sharing {
         $userid = $event->objectid;
         $contextid = $event->contextid;
         $DB->delete_records(provider::TABLE, ['ownerid' => $userid]);
+        foreach ($DB->get_records(tuning::TABLE, ['ownerid' => $userid], '', 'id') as $record) {
+            tuning::get($record->id)->delete();
+        }
         foreach ($DB->get_records(library\template::TABLE, ['ownerid' => $userid]) as $record) {
             if ($record->contextid == $contextid) {
                 $DB->delete_records(library\template::VERSIONS_TABLE, ['templateid' => $record->id]);

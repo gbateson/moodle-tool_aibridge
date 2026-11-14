@@ -104,6 +104,34 @@ function xmldb_tool_aibridge_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, 'tool', 'aibridge');
     }
 
+    $newversion = 2026111407;
+    if ($oldversion < $newversion) {
+        // Fine-tuning jobs.
+        $table = new xmldb_table('tool_aibridge_tunings');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('ownerid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('contextid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('providerid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('basemodel', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('status', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'waiting');
+        $table->add_field('remotefileid', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('jobid', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('tunedmodel', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('tunedproviderid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('error', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('ownerid', XMLDB_KEY_FOREIGN, ['ownerid'], 'user', ['id']);
+        $table->add_key('contextid', XMLDB_KEY_FOREIGN, ['contextid'], 'context', ['id']);
+        $table->add_index('status', XMLDB_INDEX_NOTUNIQUE, ['status']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+        upgrade_plugin_savepoint(true, $newversion, 'tool', 'aibridge');
+    }
+
     // Add or update the templates that plugins ship.
     \tool_aibridge\library::sync_all();
 
