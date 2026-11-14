@@ -60,6 +60,9 @@ class response {
     /** @var string the file extension of the audio, e.g. "mp3". */
     protected $extension = '';
 
+    /** @var string WebVTT subtitles for the audio, e.g. of a conversation, or ''. */
+    protected $captions = '';
+
     /** @var string the route: core or external. */
     protected $route = '';
 
@@ -193,6 +196,17 @@ class response {
     }
 
     /**
+     * Set the subtitles for the audio.
+     *
+     * @param string $captions WebVTT.
+     * @return response
+     */
+    public function set_captions(string $captions): response {
+        $this->captions = $captions;
+        return $this;
+    }
+
+    /**
      * Set the generated image.
      *
      * @param string $image
@@ -313,6 +327,15 @@ class response {
      */
     public function get_audio(): string {
         return $this->audio;
+    }
+
+    /**
+     * Get the subtitles for the audio.
+     *
+     * @return string WebVTT, or '' if there are none.
+     */
+    public function get_captions(): string {
+        return $this->captions;
     }
 
     /**

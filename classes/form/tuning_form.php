@@ -77,10 +77,11 @@ class tuning_form extends \moodleform {
     public function validation($data, $files) {
         global $USER;
         $errors = parent::validation($data, $files);
-        // get_file_content() would check the form again, so read the draft file here.
+        // Reading the file with get_file_content() would check the form again, so read the draft file here.
         $content = '';
         $usercontext = \context_user::instance($USER->id);
-        $draftfiles = get_file_storage()->get_area_files($usercontext->id, 'user', 'draft', (int) $data['trainingfile'], 'id', false);
+        $fs = get_file_storage();
+        $draftfiles = $fs->get_area_files($usercontext->id, 'user', 'draft', (int) $data['trainingfile'], 'id', false);
         if ($draftfiles) {
             $content = reset($draftfiles)->get_content();
         }

@@ -34,7 +34,8 @@ use tool_aibridge\action\generate_speech;
  * commas), unless the voices are given. Each line is sent to the same speech
  * provider, and is logged; then the pieces are joined, with a short pause
  * between them if they are WAV. The request template can use {{SPEAKER}},
- * {{GENDER}} and {{ROLE}}, and {{AUDIOFORMAT}} is set to "wav".
+ * {{GENDER}} and {{ROLE}}, and {{AUDIOFORMAT}} is set to "wav". The response
+ * also has WebVTT subtitles, with the speaker and text of each line.
  *
  * @package    tool_aibridge
  * @copyright  2026 Gordon Bateson
@@ -203,6 +204,7 @@ class dialogue {
         );
 
         $pieces = [];
+        $cues = [];
         $response = null;
         foreach ($parsed['lines'] as $i => $line) {
             [$name, $text] = $line;
@@ -228,6 +230,7 @@ class dialogue {
                 );
             }
             $pieces[] = [$response->get_audio(), $response->get_extension(), $response->get_mimetype()];
+            $cues[] = [audio::get_duration($response->get_audio(), $response->get_extension()), $name . ': ' . $text];
         }
         try {
             [$audio, $extension, $mimetype] = audio::join($pieces, $pause);
@@ -247,6 +250,7 @@ class dialogue {
         return response::success(response::ROUTE_EXTERNAL, $provider->get_id(), $provider->get_name(), $response->get_model())
             ->set_audio($audio, $mimetype, $extension)
             ->set_content(implode(', ', $description))
+            ->set_captions(audio::make_captions($cues, ($extension === 'wav') ? $pause : 0))
             ->set_logid($response->get_logid());
     }
 }

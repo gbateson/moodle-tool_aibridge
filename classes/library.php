@@ -47,9 +47,13 @@ class library {
      * Add or update the templates that every plugin ships.
      */
     public static function sync_all(): void {
+        // The bridge's own templates come first, because other plugins' prompts extend them.
+        self::sync_component('tool_aibridge');
         foreach (\core_component::get_plugin_types() as $type => $unused) {
             foreach (\core_component::get_plugin_list_with_file($type, self::DEFINITIONS_FILE) as $plugin => $file) {
-                self::sync_component($type . '_' . $plugin);
+                if ($type . '_' . $plugin !== 'tool_aibridge') {
+                    self::sync_component($type . '_' . $plugin);
+                }
             }
         }
     }

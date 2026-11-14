@@ -140,7 +140,9 @@ $response = \tool_aibridge\dialogue::generate($context->id, $USER->id, $script, 
 Each line is spoken by the same speech provider, in a voice chosen by
 gender from the provider's `VOICES_FEMALE` and `VOICES_MALE` lists (or given
 in the `voices` option), and the pieces are joined, with a short pause
-between the lines if the provider sends WAV. Each line is logged.
+between the lines if the provider sends WAV. Each line is logged. The
+response also has subtitles in WebVTT format, with the speaker and text of
+each line, from `$response->get_captions()`.
 
 `\tool_aibridge\media::generate()` makes the media for a marker in a reply,
 such as `[[IMAGE ...]]`, `[[AUDIO ...]]`, or `[[AUDIO ...]]` with a

@@ -48,6 +48,23 @@ final class audio_test extends \advanced_testcase {
     }
 
     /**
+     * The length of audio, and subtitles for pieces of audio.
+     */
+    public function test_duration_and_captions(): void {
+        $wav = audio::pcm_to_wav(str_repeat("\x01\x00", 24000), 24000);
+        $this->assertEqualsWithDelta(1.0, audio::get_duration($wav, 'wav'), 0.0001);
+        // A 128 kbit/s MPEG-1 Layer III frame header, then 15996 more bytes: 16000 bytes last 1 second.
+        $mp3 = "\xFF\xFB\x90\x00" . str_repeat("\x00", 15996);
+        $this->assertEqualsWithDelta(1.0, audio::get_duration($mp3, 'mp3'), 0.0001);
+        $this->assertSame(0.0, audio::get_duration('text', 'mp3'));
+        $this->assertSame(0.0, audio::get_duration('text', 'wav'));
+
+        $captions = audio::make_captions([[1.5, 'A: Hello.'], [62.25, "B: Good\n morning."]], 500);
+        $this->assertSame("WEBVTT\n\n1\n00:00:00.000 --> 00:00:01.500\nA: Hello.\n\n" .
+            "2\n00:00:02.000 --> 00:01:04.250\nB: Good morning.\n", $captions);
+    }
+
+    /**
      * Text is not audio.
      */
     public function test_not_audio(): void {

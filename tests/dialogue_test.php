@@ -125,6 +125,11 @@ final class dialogue_test extends \advanced_testcase {
         $this->assertSame('A: nova, B: onyx', $response->get_content());
         $this->assertSame(4, $DB->count_records(logger::TABLE, ['component' => 'mod_test', 'success' => 1]));
 
+        // Each line is a subtitle: 100 samples at 24000 Hz last 4 ms.
+        $captions = $response->get_captions();
+        $this->assertStringStartsWith("WEBVTT\n\n1\n00:00:00.000 --> 00:00:00.004\nA: ", $captions);
+        $this->assertStringContainsString("\n4\n00:00:00.01", $captions);
+
         // The voice, role and format are tokens of each line.
         $action = new action\generate_speech($context->id, $user->id, 'Hello', 'nova');
         $action->set_token('AUDIOFORMAT', 'wav');

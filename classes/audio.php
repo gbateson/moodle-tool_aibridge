@@ -236,4 +236,78 @@ class audio {
         }
         return $mp3;
     }
+
+    /**
+     * Get the length of a piece of audio. For MP3, the bit rate of the first
+     * frame is used, so the length of variable-bit-rate audio is only roughly right.
+     *
+     * @param string $audio
+     * @param string $extension "wav" or "mp3".
+     * @return float seconds, or 0 if the length cannot be found.
+     */
+    public static function get_duration(string $audio, string $extension): float {
+        if ($extension === 'wav') {
+            try {
+                [$format, $samples] = self::read_wav($audio);
+            } catch (\moodle_exception $e) {
+                return 0.0;
+            }
+            $byterate = $format['rate'] * $format['blockalign'];
+            return $byterate ? strlen($samples) / $byterate : 0.0;
+        }
+        if ($extension === 'mp3') {
+            $mp3 = self::strip_id3($audio);
+            $length = strlen($mp3);
+            // MPEG-1 Layer III bit rates, in kbit/s.
+            $bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+            $offset = strpos($mp3, "\xFF");
+            while ($offset !== false && $offset + 4 <= $length) {
+                if ((ord($mp3[$offset + 1]) & 0xE0) === 0xE0) {
+                    $header = unpack('N', substr($mp3, $offset, 4))[1];
+                    $bitrate = $bitrates[($header >> 12) & 0xF];
+                    if ($bitrate) {
+                        return ($length - $offset) * 8 / ($bitrate * 1000);
+                    }
+                }
+                $offset = strpos($mp3, "\xFF", $offset + 1);
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * Make WebVTT subtitles for pieces of audio that are played one after another.
+     *
+     * @param array $cues each [float $seconds, string $text].
+     * @param int $pause the pause between pieces, in milliseconds.
+     * @return string
+     */
+    public static function make_captions(array $cues, int $pause = 0): string {
+        $lines = ['WEBVTT', ''];
+        $start = 0.0;
+        foreach (array_values($cues) as $i => $cue) {
+            [$seconds, $text] = $cue;
+            if ($i > 0) {
+                $start += $pause / 1000;
+            }
+            $end = $start + $seconds;
+            $lines[] = $i + 1;
+            $lines[] = self::format_time($start) . ' --> ' . self::format_time($end);
+            $lines[] = trim(preg_replace('/\s+/', ' ', $text));
+            $lines[] = '';
+            $start = $end;
+        }
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Format a time for WebVTT, e.g. 00:01:23.456.
+     *
+     * @param float $seconds
+     * @return string
+     */
+    public static function format_time(float $seconds): string {
+        $ms = (int) round($seconds * 1000);
+        return sprintf('%02d:%02d:%02d.%03d', intdiv($ms, 3600000), intdiv($ms, 60000) % 60, intdiv($ms, 1000) % 60, $ms % 1000);
+    }
 }
