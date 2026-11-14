@@ -21,9 +21,9 @@ The bridge gives plugins:
 * **Moodle's AI first**, when it is set up, so that sites can use the
   providers and settings they already have.
 * **Any provider with a JSON API**, set up with a URL, headers and a request
-  template. Presets fill these in for ChatGPT, Claude, Gemini, DeepSeek,
-  Ollama, OpenAI speech, Gemini speech, ElevenLabs, OpenAI images, DALL-E 3
-  and Imagen.
+  template. Presets fill these in for ChatGPT, Claude, Gemini (also for
+  large files), DeepSeek, Ollama, OpenAI speech, Gemini speech, ElevenLabs,
+  OpenAI images, DALL-E 3 and Imagen.
 * **Teachers' own providers.** Teachers can add providers with their own
   API keys, and share them in their courses or categories, for as long as
   they choose.
@@ -154,6 +154,29 @@ Other useful methods:
   provider's request template.
 * `generate_text` takes files (`stored_file` objects) as its fifth argument,
   for providers that take text and files.
+* `$response->is_temporary()`: might the request work if it is sent again
+  later? This is so for no connection, a busy provider (HTTP 408, 429 and
+  5xx), a reply that cannot be read, and rate limits. Background tasks can
+  use it to decide whether to try again.
+* `provider::get_shared($context, $capabilities)`: the providers shared in a
+  context and the contexts above it, but not personal providers. A plugin
+  can offer these when teachers choose a provider for students' requests,
+  e.g. when responses to a question are assessed.
+
+### Background tasks
+
+Requests are made as a user, e.g. the student whose response is assessed.
+The user must have accepted the AI policy (`policy::has_accepted()`), so
+show users a link to the policy (`policy::get_url()`) before their data is
+sent in a background task.
+
+### Moving a plugin's own AI settings to the bridge
+
+Moodle upgrades admin tools after many other kinds of plugin, so a plugin
+upgraded in the same run as the bridge is installed cannot use the
+bridge's tables in its upgrade steps. When the bridge is installed, it
+calls `{component}_aibridge_installed()` in each plugin's `lib.php`, so the
+plugin can finish the move then. SpeakUp (`qtype_speakup`) does this.
 
 In PHPUnit tests, add a provider with the bridge's generator, and mock its
 reply:
@@ -256,6 +279,7 @@ that are filled in when the request is sent:
 | `{{PROMPT}}`, `{{SYSTEM}}` | Text. Without `{{SYSTEM}}`, the system instructions come before the prompt |
 | `{{FILE_PARTS}}` | Text and files: one part for each file, from the file template |
 | `{{FILE_BASE64}}`, `{{FILE_MIMETYPE}}`, `{{FILE_NAME}}` | The file template, or a request with one file |
+| `{{FILE_URI}}` | Instead of `{{FILE_BASE64}}`, for providers whose files are uploaded first |
 | `{{TEXT}}`, `{{VOICE}}`, `{{LANGUAGE}}` | Speech |
 | `{{SPEAKER}}`, `{{GENDER}}`, `{{ROLE}}`, `{{AUDIOFORMAT}}` | Speech, in conversations (`{{AUDIOFORMAT}}` is `wav`) |
 | `{{PROMPT}}`, `{{SIZE}}`, `{{RATIO}}`, `{{QUALITY}}`, `{{STYLE}}` | Images. Sizes and ratios come from `SIZE_SQUARE`, `RATIO_LANDSCAPE`, etc. in "Default values" |
@@ -264,6 +288,11 @@ Values are JSON-escaped, so put quotes round string tokens (`"{{PROMPT}}"`)
 but not round numbers (`{{MAXTOKENS}}`). "Default values" give tokens a value,
 e.g. `{"VOICE": "alloy", "MAXTOKENS": "2000"}`.
 
+Files are sent in the request, as base64, or, for large files such as long
+recordings and videos, uploaded first ("Files: Uploaded first"), so that
+the request refers to them. The "Gemini (large files)" preset uploads them
+with Gemini's Files API, sending the API key in a header.
+
 The "Return path" says where the reply is, e.g. `choices,0,message,content`.
 For speech and images, leave it empty if the provider sends back the audio
 or image itself, or give the path to base64 data, or to a URL of the image,
@@ -271,7 +300,6 @@ in a JSON reply.
 
 ## Coming next
 
-* HotPot exercises as output formats.
 * Transcription, and assessment of writing and speaking.
 * Video.
 

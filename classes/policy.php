@@ -136,7 +136,8 @@ class policy {
      */
     public static function get_url(\context $context, ?\moodle_url $returnurl = null): \moodle_url {
         $params = ['contextid' => $context->id];
-        if ($returnurl) {
+        // Only a page on this site can be returned to.
+        if ($returnurl && strpos($returnurl->out(false), (new \moodle_url('/'))->out(false)) === 0) {
             $params['returnurl'] = $returnurl->out_as_local_url(false);
         }
         return new \moodle_url('/admin/tool/aibridge/policy.php', $params);

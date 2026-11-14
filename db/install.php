@@ -23,8 +23,19 @@
  */
 
 /**
- * Add the templates that plugins ship.
+ * Add the templates that plugins ship, and tell plugins that the bridge is
+ * installed, e.g. so that they can move their own AI settings to the bridge.
+ *
+ * Moodle installs and upgrades admin tools after many other kinds of plugin,
+ * so a plugin that is upgraded in the same run as the bridge is installed
+ * cannot use the bridge's tables in its own upgrade steps. Instead, it can
+ * have a function called {component}_aibridge_installed() in its lib.php.
  */
 function xmldb_tool_aibridge_install() {
     \tool_aibridge\library::sync_all();
+    foreach (get_plugins_with_function('aibridge_installed') as $plugins) {
+        foreach ($plugins as $function) {
+            $function();
+        }
+    }
 }
