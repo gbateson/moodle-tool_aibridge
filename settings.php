@@ -112,6 +112,77 @@ if (
             PARAM_INT
         ));
 
+        // Media files: how the images and audio that AI providers make are converted.
+        $status = '';
+        if (!during_initial_install() && !empty($CFG->version)) {
+            $status = \tool_aibridge\media_converter::get_status_html();
+        }
+        $settings->add(new admin_setting_heading(
+            "$plugin/mediaheading",
+            new lang_string('mediafiles', $plugin),
+            new lang_string('mediafiles_desc', $plugin) . $status
+        ));
+        $settings->add(new admin_setting_configexecutable(
+            "$plugin/pathtoffmpeg",
+            new lang_string('pathtoffmpeg', $plugin),
+            new lang_string('pathtoffmpeg_desc', $plugin),
+            \tool_aibridge\media_converter::DEFAULT_FFMPEG
+        ));
+        $settings->add(new admin_setting_configselect(
+            "$plugin/imageformat",
+            new lang_string('imageformat', $plugin),
+            new lang_string('imageformat_desc', $plugin),
+            \tool_aibridge\media_converter::DEFAULT_IMAGE_FORMAT,
+            [
+                'jpg' => 'JPEG',
+                'png' => 'PNG',
+                \tool_aibridge\media_converter::FORMAT_KEEP => new lang_string('formatkeep', $plugin),
+            ]
+        ));
+        $sides = [0 => new lang_string('anysize', $plugin)];
+        foreach ([512, 768, 1024, 1280, 1536, 2048] as $side) {
+            $sides[$side] = new lang_string('pixels', $plugin, $side);
+        }
+        $settings->add(new admin_setting_configselect(
+            "$plugin/imagemaxside",
+            new lang_string('imagemaxside', $plugin),
+            new lang_string('imagemaxside_desc', $plugin),
+            \tool_aibridge\media_converter::DEFAULT_IMAGE_MAX_SIDE,
+            $sides
+        ));
+        $qualities = [];
+        foreach ([60, 70, 75, 80, 85, 90, 95] as $quality) {
+            $qualities[$quality] = $quality;
+        }
+        $settings->add(new admin_setting_configselect(
+            "$plugin/imagequality",
+            new lang_string('imagequality', $plugin),
+            new lang_string('imagequality_desc', $plugin),
+            \tool_aibridge\media_converter::DEFAULT_IMAGE_QUALITY,
+            $qualities
+        ));
+        $settings->add(new admin_setting_configselect(
+            "$plugin/audioformat",
+            new lang_string('audioformat', $plugin),
+            new lang_string('audioformat_desc', $plugin),
+            \tool_aibridge\media_converter::DEFAULT_AUDIO_FORMAT,
+            [
+                'mp3' => 'MP3',
+                \tool_aibridge\media_converter::FORMAT_KEEP => new lang_string('formatkeep', $plugin),
+            ]
+        ));
+        $bitrates = [];
+        foreach (\tool_aibridge\media_converter::AUDIO_BITRATES as $bitrate) {
+            $bitrates[$bitrate] = new lang_string('bitrate', $plugin, (int) $bitrate);
+        }
+        $settings->add(new admin_setting_configselect(
+            "$plugin/audiobitrate",
+            new lang_string('audiobitrate', $plugin),
+            new lang_string('audiobitrate_desc', $plugin),
+            \tool_aibridge\media_converter::DEFAULT_AUDIO_BITRATE,
+            $bitrates
+        ));
+
         $settings->add(new admin_setting_heading(
             "$plugin/logheading",
             new lang_string('log', $plugin),

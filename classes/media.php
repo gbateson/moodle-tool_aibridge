@@ -35,7 +35,9 @@ class media {
      * @param int $contextid
      * @param int $userid
      * @param array $options for audio: voice, voices, language, pause; for images: aspectratio,
-     *      quality, style; and providerid, component, purpose.
+     *      quality, style; and providerid, component, purpose. "convert" => false keeps the media as the
+     *      provider sent it; otherwise it is converted as the site's settings say, or with the
+     *      options in "convertoptions" (see media_converter::convert_path()).
      * @return response with the audio or image.
      */
     public static function generate(array $item, int $contextid, int $userid, array $options = []): response {
@@ -45,7 +47,7 @@ class media {
         switch ($item['type']) {
             case 'AUDIO':
                 if (dialogue::is_dialogue($text)) {
-                    return dialogue::generate($contextid, $userid, $text, $options);
+                    return self::convert(dialogue::generate($contextid, $userid, $text, $options), $options);
                 }
                 $action = new generate_speech(
                     $contextid,
@@ -55,7 +57,7 @@ class media {
                     isset($options['language']) ? (string) $options['language'] : ''
                 );
                 $action->set_purpose($component, isset($options['purpose']) ? (string) $options['purpose'] : 'audio');
-                return manager::process($action, $providerid);
+                return self::convert(manager::process($action, $providerid), $options);
             case 'IMAGE':
                 $action = new generate_image(
                     $contextid,
@@ -66,8 +68,22 @@ class media {
                     isset($options['style']) ? (string) $options['style'] : ''
                 );
                 $action->set_purpose($component, isset($options['purpose']) ? (string) $options['purpose'] : 'image');
-                return manager::process($action, $providerid);
+                return self::convert(manager::process($action, $providerid), $options);
         }
         return response::failure('mediatype', get_string('errormediatype', 'tool_aibridge', $item['type']));
+    }
+
+    /**
+     * Convert the media in a response, unless the options say not to.
+     *
+     * @param response $response
+     * @param array $options
+     * @return response
+     */
+    protected static function convert(response $response, array $options): response {
+        if (!isset($options['convert']) || $options['convert']) {
+            $response->convert_media(isset($options['convertoptions']) ? (array) $options['convertoptions'] : []);
+        }
+        return $response;
     }
 }

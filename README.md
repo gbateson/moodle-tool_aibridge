@@ -148,6 +148,18 @@ each line, from `$response->get_captions()`.
 such as `[[IMAGE ...]]`, `[[AUDIO ...]]`, or `[[AUDIO ...]]` with a
 conversation in it.
 
+The images and audio that providers make are converted before they are
+saved, as the site's "Media files" settings say: by default, images become
+JPEG files at most 1024 pixels wide or tall, and audio becomes mono MP3 (with
+ffmpeg). Pass `'convert' => false` to `media::generate()` to keep them as the
+provider sent them. Other plugins can use `\tool_aibridge\media_converter`
+to convert files of their own, e.g. to make students' large uploads smaller:
+
+```php
+// [path, filename, mimetype] in a temporary folder, or null.
+$result = \tool_aibridge\media_converter::convert_file($file, ['imagemaxside' => 2000, 'minsaving' => 0.8]);
+```
+
 Other useful methods:
 
 * `manager::is_available($action)`: can any route do this action here?

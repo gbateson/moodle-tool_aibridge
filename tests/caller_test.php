@@ -124,8 +124,10 @@ final class caller_test extends \advanced_testcase {
      */
     public function test_missing_tokens(): void {
         $this->resetAfterTest();
-        $this->assertSame(['VOICE'], caller::find_missing_tokens(['{"v": "{{VOICE}}", "t": "{{TEXT}}"}', '{{FILE_PARTS}}'],
-            ['TEXT' => 'Hi']));
+        $this->assertSame(['VOICE'], caller::find_missing_tokens(
+            ['{"v": "{{VOICE}}", "t": "{{TEXT}}"}', '{{FILE_PARTS}}'],
+            ['TEXT' => 'Hi']
+        ));
 
         $user = $this->getDataGenerator()->create_user();
         $preset = presets::get_presets()['geminitts'];

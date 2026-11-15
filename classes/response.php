@@ -330,6 +330,33 @@ class response {
     }
 
     /**
+     * Convert the audio or image, e.g. to make it smaller, as the site's settings
+     * say (see media_converter::get_options()), or with other options. The new
+     * media is only kept if it is no bigger than the old.
+     *
+     * @param array $options see media_converter::convert_path().
+     * @return bool whether the media was changed.
+     */
+    public function convert_media(array $options = []): bool {
+        $isaudio = ($this->audio !== '');
+        $content = $isaudio ? $this->audio : $this->image;
+        if (!$this->success || $content === '') {
+            return false;
+        }
+        $result = media_converter::convert_content($content, $this->extension, $this->mimetype, $options + ['minsaving' => 1]);
+        if (!$result) {
+            return false;
+        }
+        [$content, $extension, $mimetype] = $result;
+        if ($isaudio) {
+            $this->set_audio($content, $mimetype, $extension);
+        } else {
+            $this->set_image($content, $mimetype, $extension);
+        }
+        return true;
+    }
+
+    /**
      * Get the subtitles for the audio.
      *
      * @return string WebVTT, or '' if there are none.
