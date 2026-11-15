@@ -90,7 +90,7 @@
         <FIELD NAME="type" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="prompt" SEQUENCE="false" COMMENT="prompt, format or fragment"/>
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="The plugin that ships this template, or empty for a user's template"/>
+        <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="The plugin that ships this template, or empty for a user's template"/>
         <FIELD NAME="ownerid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Where the template is shared"/>
         <FIELD NAME="parentid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The prompt that this prompt extends"/>
