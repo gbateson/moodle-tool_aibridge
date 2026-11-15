@@ -132,6 +132,14 @@ function xmldb_tool_aibridge_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, 'tool', 'aibridge');
     }
 
+    $newversion = 2026111409;
+    if ($oldversion < $newversion) {
+        // Providers that were moved from other plugins, e.g. SpeakUp, may have no default
+        // token values, e.g. no VOICE, so give them the values of the preset they match.
+        \tool_aibridge\presets::add_missing_defaults();
+        upgrade_plugin_savepoint(true, $newversion, 'tool', 'aibridge');
+    }
+
     // Add or update the templates that plugins ship.
     \tool_aibridge\library::sync_all();
 

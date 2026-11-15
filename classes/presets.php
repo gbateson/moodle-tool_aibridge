@@ -295,6 +295,43 @@ class presets {
     }
 
     /**
+     * Find the preset that a provider was made from, by its capability and URL.
+     *
+     * @param \stdClass $record the provider's fields.
+     * @return string the preset name, or '' if no preset matches.
+     */
+    public static function find_match(\stdClass $record): string {
+        $url = trim((string) ($record->url ?? ''));
+        foreach (self::get_presets() as $name => $preset) {
+            if ($preset['capability'] === ($record->capability ?? '') && $preset['url'] === $url) {
+                return $name;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Give the providers that have no default token values the values of the
+     * preset they match, e.g. a voice for a speech provider.
+     *
+     * @return int how many providers were changed.
+     */
+    public static function add_missing_defaults(): int {
+        global $DB;
+        $count = 0;
+        $presets = self::get_presets();
+        $select = $DB->sql_isempty(provider::TABLE, 'tokendefaults', true, true) . ' OR tokendefaults IS NULL';
+        foreach ($DB->get_records_select(provider::TABLE, $select) as $record) {
+            $name = self::find_match($record);
+            if ($name !== '' && !empty($presets[$name]['tokendefaults'])) {
+                $DB->set_field(provider::TABLE, 'tokendefaults', $presets[$name]['tokendefaults'], ['id' => $record->id]);
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
      * Get the preset menu for the provider form.
      *
      * @return string[] preset name => label.

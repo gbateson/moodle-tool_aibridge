@@ -74,6 +74,16 @@ class caller {
             }
         }
 
+        // Every token in the provider's templates must have a value, or the
+        // provider would get the placeholder itself, e.g. a voice called "{{VOICE}}".
+        $missing = self::find_missing_tokens([$record->url, (string) $record->headers, $template], $tokens);
+        if ($missing) {
+            throw new \moodle_exception('errormissingtokens', 'tool_aibridge', '', (object) [
+                'provider' => $record->name,
+                'tokens' => implode(', ', $missing),
+            ]);
+        }
+
         // The URL and headers are not JSON, so tokens go in as they are.
         $url = self::substitute_plain($record->url, $tokens);
         $headers = self::substitute_plain((string) $record->headers, $tokens);
@@ -311,6 +321,27 @@ class caller {
             }
         }
         return [null, null];
+    }
+
+    /**
+     * Find the tokens in templates that have no value.
+     *
+     * @param string[] $templates
+     * @param array $tokens name => value.
+     * @return string[] the names of the tokens that have no value.
+     */
+    public static function find_missing_tokens(array $templates, array $tokens): array {
+        $missing = [];
+        foreach ($templates as $template) {
+            if (preg_match_all('/\{\{([A-Z0-9_]+)\}\}/', $template, $matches)) {
+                foreach ($matches[1] as $name) {
+                    if ($name !== 'FILE_PARTS' && !array_key_exists($name, $tokens)) {
+                        $missing[$name] = $name;
+                    }
+                }
+            }
+        }
+        return array_values($missing);
     }
 
     /**

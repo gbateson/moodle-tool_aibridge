@@ -112,6 +112,7 @@ $string['errorincludeloop'] = '"{$a}" includes itself, or includes too many leve
 $string['errorjsonobject'] = 'This must be a JSON object, e.g. {"name": "value"}.';
 $string['errorjsontemplate'] = 'This is not valid JSON, even after the {{TOKENS}} are filled in.';
 $string['errormediatype'] = 'Media of type "{$a}" cannot be made yet.';
+$string['errormissingtokens'] = 'The request to "{$a->provider}" needs a value for {$a->tokens}. Please add it to the provider\'s default token values.';
 $string['errornegative'] = 'This cannot be less than 0.';
 $string['errornocloze'] = 'The reply has no embedded answers, e.g. {1:MCVS:=right~wrong}.';
 $string['errornocore'] = 'Moodle\'s AI subsystem cannot do this request.';

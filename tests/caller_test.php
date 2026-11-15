@@ -117,4 +117,34 @@ final class caller_test extends \advanced_testcase {
         $reply = caller::send($provider, ['PROMPT' => 'Listen'], [$file], $info);
         $this->assertStringContainsString('"ok"', $reply);
     }
+
+    /**
+     * A token in the provider's templates that has no value stops the request,
+     * and providers with no default values get those of the preset they match.
+     */
+    public function test_missing_tokens(): void {
+        $this->resetAfterTest();
+        $this->assertSame(['VOICE'], caller::find_missing_tokens(['{"v": "{{VOICE}}", "t": "{{TEXT}}"}', '{{FILE_PARTS}}'],
+            ['TEXT' => 'Hi']));
+
+        $user = $this->getDataGenerator()->create_user();
+        $preset = presets::get_presets()['geminitts'];
+        $preset['tokendefaults'] = '';
+        $provider = provider::save((object) ($preset + [
+            'ownerid' => $user->id,
+            'contextid' => \context_user::instance($user->id)->id,
+        ]), 'secret');
+        try {
+            caller::send($provider, ['TEXT' => 'Hello']);
+            $this->fail('The request should not be sent.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errormissingtokens', $e->errorcode);
+            $this->assertStringContainsString('VOICE', $e->getMessage());
+        }
+
+        $this->assertSame('geminitts', presets::find_match($provider->get_record()));
+        $this->assertSame(1, presets::add_missing_defaults());
+        $this->assertSame('Kore', provider::get($provider->get_id())->get_token_defaults()['VOICE']);
+        $this->assertSame(0, presets::add_missing_defaults());
+    }
 }
