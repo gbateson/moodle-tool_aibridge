@@ -16,6 +16,7 @@
 
 namespace tool_aibridge;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\media_converter::class)]
 /**
  * Tests for converting media files.
  *
@@ -23,8 +24,8 @@ namespace tool_aibridge;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\media_converter
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\media_converter::class)]
 final class media_converter_test extends \advanced_testcase {
     /**
      * Make a PNG image with some detail, so that it is not tiny.

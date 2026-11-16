@@ -22,6 +22,7 @@ use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 use tool_aibridge\privacy\provider as privacy_provider;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\privacy\provider::class)]
 /**
  * Tests for the privacy provider.
  *
@@ -29,8 +30,8 @@ use tool_aibridge\privacy\provider as privacy_provider;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\privacy\provider
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\privacy\provider::class)]
 final class privacy_test extends \core_privacy\tests\provider_testcase {
     /** @var \stdClass a teacher, who adds a provider and sends requests. */
     protected $teacher;

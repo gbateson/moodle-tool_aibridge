@@ -16,6 +16,7 @@
 
 namespace tool_aibridge;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\audio::class)]
 /**
  * Tests for working out what kind of audio a provider sent back.
  *
@@ -23,8 +24,8 @@ namespace tool_aibridge;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\audio
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\audio::class)]
 final class audio_test extends \advanced_testcase {
     /**
      * Audio formats are recognised from their first bytes.

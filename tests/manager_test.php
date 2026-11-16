@@ -20,14 +20,6 @@ use tool_aibridge\action\generate_image;
 use tool_aibridge\action\generate_speech;
 use tool_aibridge\action\generate_text;
 
-/**
- * Tests for sending actions: routes, safeguards and the log.
- *
- * @package    tool_aibridge
- * @category   test
- * @copyright  2026 Gordon Bateson
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\manager::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\action\generate_text::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\action\generate_speech::class)]
@@ -36,6 +28,22 @@ use tool_aibridge\action\generate_text;
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\policy::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\rate_limiter::class)]
 #[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\logger::class)]
+/**
+ * Tests for sending actions: routes, safeguards and the log.
+ *
+ * @package    tool_aibridge
+ * @category   test
+ * @copyright  2026 Gordon Bateson
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\manager
+ * @covers     \tool_aibridge\action\generate_text
+ * @covers     \tool_aibridge\action\generate_speech
+ * @covers     \tool_aibridge\action\generate_image
+ * @covers     \tool_aibridge\image
+ * @covers     \tool_aibridge\policy
+ * @covers     \tool_aibridge\rate_limiter
+ * @covers     \tool_aibridge\logger
+ */
 final class manager_test extends \advanced_testcase {
     /** A reply from an OpenAI-style chat API. */
     const CHAT_REPLY = '{"model": "gpt-test", "choices": [{"message": {"content": "Hello there"}}],

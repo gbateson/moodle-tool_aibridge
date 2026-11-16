@@ -16,6 +16,7 @@
 
 namespace tool_aibridge;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\caller::class)]
 /**
  * Tests for the caller, which fills in request templates and reads replies.
  *
@@ -23,8 +24,8 @@ namespace tool_aibridge;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\caller
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\caller::class)]
 final class caller_test extends \advanced_testcase {
     /**
      * Tokens are JSON-escaped in the body, and inserted as they are in URLs and headers.

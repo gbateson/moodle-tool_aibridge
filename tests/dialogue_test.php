@@ -16,6 +16,9 @@
 
 namespace tool_aibridge;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\dialogue::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\audio::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\media::class)]
 /**
  * Tests for conversations, joining audio, and making media from markers.
  *
@@ -23,10 +26,10 @@ namespace tool_aibridge;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\dialogue
+ * @covers     \tool_aibridge\audio
+ * @covers     \tool_aibridge\media
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\dialogue::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\audio::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\media::class)]
 final class dialogue_test extends \advanced_testcase {
     /** A conversation, as in the TOEIC Part 3 format. */
     const SCRIPT = "

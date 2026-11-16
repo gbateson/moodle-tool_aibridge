@@ -18,6 +18,8 @@ namespace tool_aibridge;
 
 use tool_aibridge\library\parser;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\parser::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\parsed::class)]
 /**
  * Tests for reading replies.
  *
@@ -25,9 +27,9 @@ use tool_aibridge\library\parser;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\library\parser
+ * @covers     \tool_aibridge\library\parsed
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\parser::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\parsed::class)]
 final class parser_test extends \advanced_testcase {
     /**
      * Chatter and code fences are removed.

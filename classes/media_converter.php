@@ -219,8 +219,10 @@ class media_converter {
             $scale = "scale='if(gte(iw,ih),min($side,iw),-2)':'if(gte(iw,ih),-2,min($side,ih))'";
             $done = self::run_ffmpeg(['-i', $input, '-vf', $scale, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28',
                     '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '64k', '-ac', '1', '-movflags', '+faststart', $output]);
-        } else if (in_array($mimetype, self::IMAGE_TYPES) && (!empty($options['reencode'])
-                || self::wants_image_change($input, $mimetype, $options))) {
+        } else if (
+            in_array($mimetype, self::IMAGE_TYPES) && (!empty($options['reencode'])
+                || self::wants_image_change($input, $mimetype, $options))
+        ) {
             $extension = ($options['imageformat'] === self::FORMAT_KEEP) ? self::get_image_extension($mimetype)
                 : (($options['imageformat'] === 'png') ? 'png' : 'jpg');
             $output = $dir . '/output.' . $extension;

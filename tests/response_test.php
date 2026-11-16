@@ -16,6 +16,8 @@
 
 namespace tool_aibridge;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\response::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\upload\uploader::class)]
 /**
  * Tests for responses, and for uploading files before a request.
  *
@@ -23,9 +25,9 @@ namespace tool_aibridge;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\response
+ * @covers     \tool_aibridge\upload\uploader
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\response::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\upload\uploader::class)]
 final class response_test extends \advanced_testcase {
     /**
      * Failures that may not happen again are temporary, so that tasks can try again.

@@ -16,6 +16,7 @@
 
 namespace tool_aibridge;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\provider::class)]
 /**
  * Tests for providers: keys, sharing and permissions.
  *
@@ -23,8 +24,8 @@ namespace tool_aibridge;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\provider
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\provider::class)]
 final class provider_test extends \advanced_testcase {
     /**
      * Get the generator.

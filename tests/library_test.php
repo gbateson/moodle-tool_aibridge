@@ -18,6 +18,10 @@ namespace tool_aibridge;
 
 use tool_aibridge\library\template;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\template::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\renderer::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\rendering::class)]
 /**
  * Tests for the AI prompt library: shipped templates, rendering, versions, sharing, import and export.
  *
@@ -25,11 +29,11 @@ use tool_aibridge\library\template;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\library
+ * @covers     \tool_aibridge\library\template
+ * @covers     \tool_aibridge\library\renderer
+ * @covers     \tool_aibridge\library\rendering
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\template::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\renderer::class)]
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\library\rendering::class)]
 final class library_test extends \advanced_testcase {
     /** @var \context_system */
     protected $context;

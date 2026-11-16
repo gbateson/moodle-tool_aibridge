@@ -16,6 +16,7 @@
 
 namespace tool_aibridge;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\tuning::class)]
 /**
  * Tests for fine-tuning jobs. Requests get mocked replies.
  *
@@ -23,8 +24,8 @@ namespace tool_aibridge;
  * @category   test
  * @copyright  2026 Gordon Bateson
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_aibridge\tuning
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\tool_aibridge\tuning::class)]
 final class tuning_test extends \advanced_testcase {
     /**
      * Make a training file of examples.
